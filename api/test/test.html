@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>AlterorgTest</title>
+<style>
+.lst {
+	margin:12px;
+	border-collapse:collapse;
+	width:90%;
+}
+.lst th {
+	border:1px solid #888;
+	padding:2px;
+	border-collapse:collapse;
+	background-color:#88f;
+}
+.lst td {
+	border:1px solid #888;
+	padding:2px;
+	border-collapse:collapse;
+}
+
+</style>
+<script type="text/javascript" src="jquery-2.1.4.min.js"></script>
+<script type="text/javascript">
+<!--
+
+var txlst = {};
+var id = 1;
+function create() {
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'Assembly.Create',
+		'params':[{
+			'proposal':  'QmUkyqBEkCyqQ9sUAqanaKQ7HKUVfSiUFn6FyenmwwKNXr', 
+			'discussion':'AmFkyqBEkCyqQ9sUAqanaKQ7HKUVfSiUFn6FyenmwwKNXr'
+		}]
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			txlst[res.result]='';
+			drawState();
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+}
+
+function getProposal(param) {
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'Assembly.GetProposal',
+		'params':[param]
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			alert(res.result);
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+}
+
+function revisionProposal(param) {
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'Assembly.RevisionProposal',
+		'params':[
+		{
+			'address': param,
+			'proposal':  'QmUkyqBEkCyqQ9sUAqanaKQ7HKUVfSiUFn6FyenmwwKNXr', 
+			'discussion':'AmFkyqBEkCyqQ9sUAqanaKQ7HKUVfSiUFn6FyenmwwKNXr'
+		}]
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			alert(res.result);
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+}
+
+function drawState() {
+	var html = ['<table class="lst"><th>TX</th><th>ADDRESS</th>'];
+	for ( var i in txlst ) {
+		html.push('<tr><td>');
+		if (txlst[i]==='') {
+			html.push(i);
+			html.push('</td><td>&nbsp;</td>');
+		} else {
+			html.push('&nbsp;</td><td>');
+			html.push(txlst[i]);
+			html.push('&nbsp;<a href="#" onclick="getProposal(\''+ txlst[i] + '\')">Get Data</a>');
+			html.push('&nbsp;<a href="#" onclick="revisionProposal(\''+ txlst[i] + '\')">Revision</a>');
+			html.push('</td>');
+		}
+		html.push('</td></tr>');
+	}
+	html.push('</table>');
+	$('#state').html(html.join(''));
+}
+
+window.onload = function() {
+	window.setInterval(function() {
+		for ( var i in txlst ) {
+			if (txlst[i]==='') {
+				checkMine(i);
+			}
+		}
+		drawState();
+	}, 3000);
+}
+
+function checkMine(tx) {
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'Assembly.CheckMine',
+		'params':[tx]
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			txlst[tx]=res.result;
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+}
+
+-->
+</script>
+<body>
+<input type="button" id="create" value="作成" onclick="create()">
+<div id="log"></div>
+<div id="state" style="width:100%"></div>
+</body>
+</html>
