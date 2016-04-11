@@ -27,15 +27,26 @@ type argCall struct {
 	Gas  int    `json:"gas"`
 }
 
-type resTransactionReceipt struct {
+type ResEventLog struct {
+	Address     string   `json:"address"`
+	BlockHash   string   `json:"blockHash"`
+	BlockNumber string   `json:"blockNumber"`
+	Data        string   `json:"data"`
+	LogIndex    string   `json:"logIndex"`
+	Topics      []string `json:"topics"`
+	TxHash      string   `json:"transactionHash"`
+	TxIndex     string   `json:"transactionIndex"`
+}
+
+type ResTransactionReceipt struct {
 	//	TH  string              `json:"transactionHash"`
 	//	TI  string              `json:"transactionIndex"`
 	//	BN  string              `json:"blockNumber"`
 	//	BH  string              `json:"blockHash"`
 	//	CGU string              `json:"cumulativeGasUsed"`
 	//	GU  string              `json:"gasUsed"`
-	CA string `json:"contractAddress"`
-	//	LOG []map[string]string `json:"logs"`
+	CA  string        `json:"contractAddress"`
+	LOG []ResEventLog `json:"logs"`
 }
 
 type encodeproc func(string) (string, error)
@@ -112,9 +123,8 @@ func getCoinbase() error {
 	return nil
 }
 
-func NewContract(code string, param []string, abi interface{}) (string, error) {
-	abii := abi.(map[string]interface{})["inputs"].([]interface{})
-	enc, er := EncodeParam(param, abii)
+func NewContract(code string, param []string, abi []interface{}) (string, error) {
+	enc, er := encodeParam(param, abi)
 	if er != nil {
 		return "", er
 	}
@@ -127,23 +137,22 @@ func NewContract(code string, param []string, abi interface{}) (string, error) {
 	return address, nil
 }
 
-func CheckContractTransaction(ts string) (string, error) {
+func CheckContractTransaction(ts string) (ResTransactionReceipt, error) {
 	arg := []Unknown{ts}
-	res := resTransactionReceipt{}
+	res := ResTransactionReceipt{}
 	if er := Request(baseurl, "eth_getTransactionReceipt", arg, &res); er != nil {
-		return "", er
+		return res, er
 	}
-	return res.CA, nil
+	return res, nil
 }
 
-func Send(to string, name string, param []string, abi interface{}) (string, error) {
-	abii := abi.(map[string]interface{})["inputs"].([]interface{})
-	enc, er := EncodeParam(param, abii)
+func Send(to string, name string, param []string, abi []interface{}) (string, error) {
+	enc, er := encodeParam(param, abi)
 	if er != nil {
 		return "", er
 	}
 	fmt.Printf("Send:%s\n", name)
-	selector, er := getFunctionSelector(name, abii)
+	selector, er := getFunctionSelector(name, abi)
 	if er != nil {
 		return "", er
 	}
@@ -157,10 +166,8 @@ func Send(to string, name string, param []string, abi interface{}) (string, erro
 	return data, nil
 }
 
-func Call(to string, name string, param []string, abi interface{}) ([]string, error) {
-	abii := abi.(map[string]interface{})["inputs"].([]interface{})
-	abio := abi.(map[string]interface{})["outputs"].([]interface{})
-	enc, er := EncodeParam(param, abii)
+func Call(to string, name string, param []string, abii []interface{}, abio []interface{}) ([]string, error) {
+	enc, er := encodeParam(param, abii)
 	if er != nil {
 		return nil, er
 	}
@@ -176,7 +183,7 @@ func Call(to string, name string, param []string, abi interface{}) ([]string, er
 		return nil, er
 	}
 	fmt.Print("11111:" + data + "\n")
-	ret, er := DecodeParam(data, abio)
+	ret, er := decodeParam(data, abio)
 	return ret, er
 }
 
@@ -226,7 +233,7 @@ func StToHex(val string) string {
 	return "0x" + fmt.Sprintf("%x", []byte(val))
 }
 
-func EncodeParam(param []string, abi []interface{}) (string, error) {
+func encodeParam(param []string, abi []interface{}) (string, error) {
 	// fixed
 	prm := []string{}
 	pos := 0
@@ -276,7 +283,7 @@ func EncodeParam(param []string, abi []interface{}) (string, error) {
 	return strings.Join(prm, ""), nil
 }
 
-func DecodeParam(data string, abi []interface{}) (ret []string, er error) {
+func decodeParam(data string, abi []interface{}) (ret []string, er error) {
 	st := 0
 	ret = []string{}
 	data = data[2:]

@@ -17,33 +17,6 @@ import (
 	"net/rpc/jsonrpc"
 )
 
-/*
-type Alterorg struct {
-}
-
-type Args struct {
-	Hop string `json:"hop"`
-	Hod string `json:"aaa"`
-}
-
-type Result int
-
-func (self *Alterorg) Create(args Args, result *Result) error {
-	fmt.Print("!!!!!!!!\n")
-	fmt.Print("hop:" + args.Hop + "  hod:" + args.Hod)
-	fmt.Print("\n!!!!!!!!\n")
-	*result = 1
-	return nil
-}
-
-func (self *Alterorg) Create2(a int, result *Result) error {
-	fmt.Print("!!!!!!!!\n")
-	fmt.Printf("test:%d", a)
-	fmt.Print("\n!!!!!!!!\n")
-	*result = 1
-	return nil
-}
-*/
 type HttpConn struct {
 	in  io.Reader
 	out io.Writer

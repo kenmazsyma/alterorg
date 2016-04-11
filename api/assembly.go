@@ -25,6 +25,11 @@ type ArgPpslRslt struct {
 	Arbiter string `json:"arbiter"`
 }
 
+type ArgChkRevPpslRslt struct {
+	Address string `json:"address"`
+	Version uint   `json:"version"`
+}
+
 func NewAssembly() *Assembly {
 	return &Assembly{}
 }
@@ -66,5 +71,16 @@ func (self *Assembly) RevisionProposal(prm ArgRevPpslParam, rslt *string) error 
 		return e
 	}
 	*rslt = tx
+	return nil
+}
+
+func (self *Assembly) CheckRevisionProposal(tx string, rslt *ArgChkRevPpslRslt) error {
+	adrs, ver, e := alg.Assembly_CheckRevision(tx)
+	if e != nil {
+		fmt.Print("%s:\n", e.Error())
+		return e
+	}
+
+	*rslt = ArgChkRevPpslRslt{Address: adrs, Version: ver}
 	return nil
 }

@@ -45,7 +45,7 @@ function create() {
 		dataType: 'json',
 		contentType: "application/json",
 		success: function(res){
-			txlst[res.result]='';
+			txlst[res.result]=[];
 			drawState();
 		},
 		error : function(req, stat,err) {
@@ -76,7 +76,7 @@ function getProposal(param) {
 	});
 }
 
-function revisionProposal(param) {
+function revisionProposal(param, idx) {
 	var data = {
 		'jsonrpc':'2.0',
 		'id':id++,
@@ -95,7 +95,8 @@ function revisionProposal(param) {
 		dataType: 'json',
 		contentType: "application/json",
 		success: function(res){
-			alert(res.result);
+			txlst[idx].push(res.result);
+			drawState();
 		},
 		error : function(req, stat,err) {
 			$('#log').html(err.message);
@@ -107,15 +108,26 @@ function drawState() {
 	var html = ['<table class="lst"><th>TX</th><th>ADDRESS</th>'];
 	for ( var i in txlst ) {
 		html.push('<tr><td>');
-		if (txlst[i]==='') {
+		switch(txlst[i].length) {
+		case 0:
 			html.push(i);
 			html.push('</td><td>&nbsp;</td>');
-		} else {
+			break;
+		case 1:
 			html.push('&nbsp;</td><td>');
-			html.push(txlst[i]);
-			html.push('&nbsp;<a href="#" onclick="getProposal(\''+ txlst[i] + '\')">Get Data</a>');
-			html.push('&nbsp;<a href="#" onclick="revisionProposal(\''+ txlst[i] + '\')">Revision</a>');
+			html.push(txlst[i][0]);
+			html.push('&nbsp;<a href="#" onclick="getProposal(\''+ txlst[i][0] + '\')">Get Data</a>');
+			html.push('&nbsp;<a href="#" onclick="revisionProposal(\''+ txlst[i][0] + '\', \''+ i  +'\')">Revision</a>');
 			html.push('</td>');
+			break;
+		case 2:
+			html.push('&nbsp;</td><td>');
+			html.push(txlst[i][0]);
+			html.push('<br>');
+			html.push(txlst[i][1]);
+			html.push('&nbsp;<a href="#" onclick="checkRevision(\''+ txlst[i][1] + '\')">Revision</a>');
+			html.push('</td>');
+			break;
 		}
 		html.push('</td></tr>');
 	}
@@ -126,7 +138,7 @@ function drawState() {
 window.onload = function() {
 	window.setInterval(function() {
 		for ( var i in txlst ) {
-			if (txlst[i]==='') {
+			if (txlst[i].length==0) {
 				checkMine(i);
 			}
 		}
@@ -148,12 +160,37 @@ function checkMine(tx) {
 		dataType: 'json',
 		contentType: "application/json",
 		success: function(res){
-			txlst[tx]=res.result;
+			if (res.result!=='') {
+				txlst[tx].push(res.result);
+			}
 		},
 		error : function(req, stat,err) {
 			$('#log').html(err.message);
 		}
 	});
+}
+
+function checkRevision(tx) {
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'Assembly.CheckRevisionProposal',
+		'params':[tx]
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			alert(res.result)
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+
 }
 
 -->
