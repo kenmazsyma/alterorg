@@ -1,0 +1,6 @@
+{
+	"eth_cmd":"geth",
+	"eth_prm":"--unlock 0 --mine --rpc --datadir=/Users/emit7c/program/ethereum/conf/ethereum_db2 --password passwd --genesis /Users/emit7c/program/ethereum/conf/genesis_geth.json privatenet",
+	"ipfs_cmd":"ipfs",
+	"ipfs_prm":"daemon"
+}

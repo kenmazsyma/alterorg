@@ -93,7 +93,7 @@ func main() {
 	for scan.Scan() {
 		if scan.Text() == "exit" {
 			cmn.Stop()
-			// TODO:don't use sleep
+			// TODO:don't use sleep.
 			time.Sleep(5 * time.Second)
 			return
 		}
