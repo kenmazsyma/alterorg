@@ -118,8 +118,10 @@ func InitEth(url string) error {
 func getCoinbase() error {
 	arg := []Unknown{""}
 	if er := Request(baseurl, "eth_coinbase", arg, &Coinbase); er != nil {
+		fmt.Printf("\ngetCoinbase:%s\n", er.Error())
 		return er
 	}
+	fmt.Printf("coinbase:%s\n", Coinbase)
 	return nil
 }
 
