@@ -75,7 +75,8 @@ func Start() error {
 	}
 	// TODO:move url to env file & not use sleep
 	time.Sleep(10 * time.Second)
-	cli.InitEth("http://localhost:8545")
+	cli.InitEth(Env.EthUrl)
+	cli.InitIpfs(Env.IpfsUrl)
 	return nil
 }
 

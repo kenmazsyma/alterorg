@@ -13,6 +13,8 @@ type EnvVal struct {
 	EthPrm  string `json:"eth_prm"`
 	IpfsCmd string `json:"ipfs_cmd"`
 	IpfsPrm string `json:"ipfs_prm"`
+	EthUrl  string `json:"eth_url"`
+	IpfsUrl string `json:"ipfs_url"`
 }
 
 var Env EnvVal
@@ -76,6 +78,10 @@ func QueryEnv(prm []string) ([]string, error) {
 			ret = append(ret, Env.IpfsCmd)
 		case "ipfs_prm":
 			ret = append(ret, Env.IpfsPrm)
+		case "eth_url":
+			ret = append(ret, Env.EthUrl)
+		case "ipfs_url":
+			ret = append(ret, Env.IpfsUrl)
 		default:
 			ret = append(ret, "")
 		}
@@ -94,6 +100,10 @@ func UpdateEnv(key string, val string) error {
 		Env.IpfsCmd = val
 	case "ipfs_prm":
 		Env.IpfsPrm = val
+	case "eth_url":
+		Env.EthUrl = val
+	case "ipfs_url":
+		Env.IpfsUrl = val
 	default:
 		return errors.New("'" + key + "' is not supported")
 	}

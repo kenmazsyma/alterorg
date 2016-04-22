@@ -1,7 +1,10 @@
 package api
 
 import (
+	"../cli"
 	"../cmn"
+	"bytes"
+	"encoding/json"
 	"fmt"
 )
 
@@ -47,20 +50,28 @@ func (self *AlterOrg) UpdateSetting(val []ArgUpdSet, rslt *bool) error {
 
 // register file to IPFS
 func (self *AlterOrg) SaveFile(path string, rslt *string) error {
+	var er error
+	*rslt, er = cli.IpfsAddFile(path)
+	if er != nil {
+		fmt.Printf("SaveFile:%s\n", er.Error())
+		return er
+	}
+	return nil
+}
+
+// register file to IPFS
+func (self *AlterOrg) SaveData(data json.RawMessage, rslt *string) error {
+	var er error
+	reader := bytes.NewReader(data)
+	*rslt, er = cli.IpfsAdd(reader)
+	if er != nil {
+		fmt.Printf("SaveData:%s\n", er.Error())
+		return er
+	}
 	return nil
 }
 
 // initialize ethereum, IPFS, etc
 func (self *AlterOrg) Initialize(prm string, rslt *string) error {
-	return nil
-}
-
-func (self *AlterOrg) Start(prm string, rslt *string) error {
-	cmn.Start()
-	return nil
-}
-
-func (self *AlterOrg) Stop(prm string, rslt *string) error {
-	cmn.Stop()
 	return nil
 }

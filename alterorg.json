@@ -2,5 +2,7 @@
 	"eth_cmd":"geth",
 	"eth_prm":"--unlock 0 --mine --rpc --datadir=/Users/emit7c/program/ethereum/conf/ethereum_db2 --password passwd --genesis /Users/emit7c/program/ethereum/conf/genesis_geth.json privatenet",
 	"ipfs_cmd":"ipfs",
-	"ipfs_prm":"daemon"
+	"ipfs_prm":"daemon",
+	"eth_url":"http://localhost:8545",
+	"ipfs_url":"127.0.0.1:5001"
 }

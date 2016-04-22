@@ -193,11 +193,59 @@ function checkRevision(tx) {
 
 }
 
+function save() {
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'AlterOrg.SaveFile',
+		'params':['/Users/emit7c/myports.txt']
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			alert(res.result)
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+
+}
+
+function savestring() {
+	var buf = new Blob(["テスト文字列"]);
+	var data = {
+		'jsonrpc':'2.0',
+		'id':id++,
+		'method':'AlterOrg.SaveData',
+		'params':[buf]
+	};
+	$.ajax({
+		type: "POST",
+		url: "http://localhost:1234",
+		data: JSON.stringify(data),
+		dataType: 'json',
+		contentType: "application/json",
+		success: function(res){
+			alert(res.result)
+		},
+		error : function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	});
+
+}
 
 -->
 </script>
 <body>
 <input type="button" id="create" value="作成" onclick="create()">&nbsp;
+<input type="button" id="create" value="保存テスト" onclick="save()">&nbsp;
+<input type="button" id="create" value="文字保存テスト" onclick="savestring()">&nbsp;
 <div id="log"></div>
 <div id="state" style="width:100%"></div>
 </body>
