@@ -3,7 +3,9 @@
 package cli
 
 import (
-	ipfs "github.com/ipfs/go-ipfs-api"
+	//"encoding/json"
+	//ipfs "github.com/ipfs/go-ipfs-api"
+	ipfs "../../go-ipfs-api"
 	"io"
 	"os"
 )
@@ -31,4 +33,12 @@ func IpfsAdd(reader io.Reader) (string, error) {
 		return "", er
 	}
 	return hash, nil
+}
+
+func IpfsGet(hash, path string) error {
+	return shell.Get(hash, path)
+}
+
+func IpfsBlockGet(hash string) ([]byte, error) {
+	return shell.BlockGet(hash)
 }

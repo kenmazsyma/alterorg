@@ -8,18 +8,21 @@ import (
 	"os"
 )
 
-type EnvVal struct {
-	EthCmd  string `json:"eth_cmd"`
-	EthPrm  string `json:"eth_prm"`
-	IpfsCmd string `json:"ipfs_cmd"`
-	IpfsPrm string `json:"ipfs_prm"`
-	EthUrl  string `json:"eth_url"`
-	IpfsUrl string `json:"ipfs_url"`
+type SysEnvSet struct {
+	EthRun    int    `json:"eth_run"`
+	EthCmd    string `json:"eth_cmd"`
+	EthPrm    string `json:"eth_prm"`
+	IpfsRun   int    `json:"ipfs_run"`
+	IpfsCmd   string `json:"ipfs_cmd"`
+	IpfsPrm   string `json:"ipfs_prm"`
+	EthUrl    string `json:"eth_url"`
+	IpfsUrl   string `json:"ipfs_url"`
+	ApEnvPath string `json:"apenv_path"`
 }
 
-var Env EnvVal
+var SysEnv SysEnvSet
 
-func LoadEnv(path string) error {
+func LoadSysEnv(path string) error {
 	fin, er := os.Open(path)
 	if er != nil {
 		fmt.Print("failure to open env file\n")
@@ -31,8 +34,8 @@ func LoadEnv(path string) error {
 		fmt.Print("failure to read env file\n")
 		return er
 	}
-	Env = EnvVal{}
-	er = json.Unmarshal(buf, &Env)
+	SysEnv = SysEnvSet{}
+	er = json.Unmarshal(buf, &SysEnv)
 	if er != nil {
 		fmt.Printf("env file is bad format:%s\n", er.Error())
 		return er
@@ -40,8 +43,8 @@ func LoadEnv(path string) error {
 	return nil
 }
 
-func SaveEnv(path string) error {
-	data, er := json.Marshal(Env)
+func SaveSysEnv(path string) error {
+	data, er := json.Marshal(SysEnv)
 	if er != nil {
 		return er
 	}
@@ -57,7 +60,7 @@ func SaveEnv(path string) error {
 		fmt.Print("failure to read env file\n")
 		return er
 	}
-	env := EnvVal{}
+	env := SysEnvSet{}
 	er = json.Unmarshal(buf, &env)
 	if er != nil {
 		fmt.Print("env file is bad format\n")
@@ -66,22 +69,22 @@ func SaveEnv(path string) error {
 	return nil
 }
 
-func QueryEnv(prm []string) ([]string, error) {
+func QuerySysEnv(prm []string) ([]string, error) {
 	ret := []string{}
 	for i := range prm {
 		switch prm[i] {
 		case "eth_cmd":
-			ret = append(ret, Env.EthCmd)
+			ret = append(ret, SysEnv.EthCmd)
 		case "eth_prm":
-			ret = append(ret, Env.EthPrm)
+			ret = append(ret, SysEnv.EthPrm)
 		case "ipfs_cmd":
-			ret = append(ret, Env.IpfsCmd)
+			ret = append(ret, SysEnv.IpfsCmd)
 		case "ipfs_prm":
-			ret = append(ret, Env.IpfsPrm)
+			ret = append(ret, SysEnv.IpfsPrm)
 		case "eth_url":
-			ret = append(ret, Env.EthUrl)
+			ret = append(ret, SysEnv.EthUrl)
 		case "ipfs_url":
-			ret = append(ret, Env.IpfsUrl)
+			ret = append(ret, SysEnv.IpfsUrl)
 		default:
 			ret = append(ret, "")
 		}
@@ -89,21 +92,21 @@ func QueryEnv(prm []string) ([]string, error) {
 	return ret, nil
 }
 
-func UpdateEnv(key string, val string) error {
+func UpdateSysEnv(key string, val string) error {
 	// TODO:will be more smaaaaart!
 	switch key {
 	case "eth_cmd":
-		Env.EthCmd = val
+		SysEnv.EthCmd = val
 	case "eth_prm":
-		Env.EthPrm = val
+		SysEnv.EthPrm = val
 	case "ipfs_cmd":
-		Env.IpfsCmd = val
+		SysEnv.IpfsCmd = val
 	case "ipfs_prm":
-		Env.IpfsPrm = val
+		SysEnv.IpfsPrm = val
 	case "eth_url":
-		Env.EthUrl = val
+		SysEnv.EthUrl = val
 	case "ipfs_url":
-		Env.IpfsUrl = val
+		SysEnv.IpfsUrl = val
 	default:
 		return errors.New("'" + key + "' is not supported")
 	}

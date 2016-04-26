@@ -33,9 +33,18 @@ func (c *HttpConn) Write(d []byte) (n int, err error) { return c.out.Write(d) }
 func (c *HttpConn) Close() error                      { return nil }
 
 func main() {
-	cmn.LoadEnv("alterorg.json")
-	err := cmn.Start()
-	//err := cli.InitEth("http://localhost:8545")
+	err := cmn.LoadSysEnv("alterorg.json")
+	if err != nil {
+		fmt.Printf("error occured when loading sysenv file\n%s\n", err.Error())
+		return
+	}
+	// TODO:
+	err = cmn.LoadApEnv(cmn.SysEnv.ApEnvPath)
+	if err != nil {
+		fmt.Printf("error occured when loading apenv file\n%s\n", err.Error())
+		return
+	}
+	err = cmn.Start()
 	if err != nil {
 		fmt.Print(err.Error())
 		return

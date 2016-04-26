@@ -108,14 +108,14 @@ var funcDecode = map[string]decodeproc{
 
 func InitEth(url string) error {
 	baseurl = url
-	err := getCoinbase()
-	if err != nil {
-		return err
-	}
+	//	err := getCoinbase()
+	//	if err != nil {
+	//		return err
+	//	}
 	return nil
 }
 
-func getCoinbase() error {
+func GetCoinbase() error {
 	arg := []Unknown{""}
 	fmt.Printf("getcoinbase::::%s\n", baseurl)
 	if er := Request(baseurl, "eth_coinbase", arg, &Coinbase); er != nil {
@@ -124,6 +124,17 @@ func getCoinbase() error {
 	}
 	fmt.Printf("coinbase:%s\n", Coinbase)
 	return nil
+}
+
+func GetEthListening() (bool, error) {
+	arg := []Unknown{""}
+	var ret bool
+	fmt.Printf("GetEthListening::::%s\n", baseurl)
+	if er := Request(baseurl, "net_listening", arg, &ret); er != nil {
+		fmt.Printf("\nGetEthListening:%s\n", er.Error())
+		return false, er
+	}
+	return ret, nil
 }
 
 func NewContract(code string, param []string, abi []interface{}) (string, error) {

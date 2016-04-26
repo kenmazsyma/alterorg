@@ -25,7 +25,7 @@
 <script type="text/javascript" src="jquery-2.1.4.min.js"></script>
 <script type="text/javascript">
 <!--
-
+var orglst = [];
 var txlst = {};
 var id = 1;
 function create() {
@@ -46,6 +46,7 @@ function create() {
 		contentType: "application/json",
 		success: function(res){
 			txlst[res.result]=[];
+			orglst.push(res.result);
 			drawState();
 		},
 		error : function(req, stat,err) {
@@ -137,92 +138,144 @@ function drawState() {
 
 window.onload = function() {
 	window.setInterval(function() {
+		checkInit();
+	}, 500);
+}
+
+function checkInit() {
+	var redraw = function() {
 		for ( var i in txlst ) {
 			if (txlst[i].length==0) {
 				checkMine(i);
 			}
 		}
 		drawState();
-	}, 3000);
+	};
+	try {
+		rpccall(
+			'AlterOrg.GetStatus',
+			[],
+			function(res){
+				if (res.result!=='RUN') {
+					$('#log').html('Wait for initializing...');
+				} else {
+					window.clearInterval(id);
+					$('#log').html('')
+					id = window.setInterval(redraw, 3000);
+				}
+			},
+			function(req, stat,err) {
+				window.clearInterval(id);
+				$('#log').html(err.message);
+			}
+		);
+	} catch (e) {
+		console.log(e);
+	}
 }
 
 function checkMine(tx) {
-	var data = {
-		'jsonrpc':'2.0',
-		'id':id++,
-		'method':'Assembly.CheckMine',
-		'params':[tx]
-	};
-	$.ajax({
-		type: "POST",
-		url: "http://localhost:1234",
-		data: JSON.stringify(data),
-		dataType: 'json',
-		contentType: "application/json",
-		success: function(res){
+	rpccall(
+		'Assembly.CheckMine',
+		[tx],
+		function(res){
 			if (res.result!=='') {
 				txlst[tx].push(res.result);
 			}
 		},
-		error : function(req, stat,err) {
+		function(req, stat,err) {
 			$('#log').html(err.message);
 		}
-	});
+	);
 }
 
 function checkRevision(tx) {
-	var data = {
-		'jsonrpc':'2.0',
-		'id':id++,
-		'method':'Assembly.CheckRevisionProposal',
-		'params':[tx]
-	};
-	$.ajax({
-		type: "POST",
-		url: "http://localhost:1234",
-		data: JSON.stringify(data),
-		dataType: 'json',
-		contentType: "application/json",
-		success: function(res){
+	rpccall(
+		'Assembly.CheckRevisionProposal',
+		[tx],
+		function(res){
 			alert(res.result)
 		},
-		error : function(req, stat,err) {
+		function(req, stat,err) {
 			$('#log').html(err.message);
 		}
-	});
-
+	);
 }
 
 function save() {
-	var data = {
-		'jsonrpc':'2.0',
-		'id':id++,
-		'method':'AlterOrg.SaveFile',
-		'params':['/Users/emit7c/myports.txt']
-	};
-	$.ajax({
-		type: "POST",
-		url: "http://localhost:1234",
-		data: JSON.stringify(data),
-		dataType: 'json',
-		contentType: "application/json",
-		success: function(res){
+	rpccall(
+		'AlterOrg.SaveFile',
+		['/Users/emit7c/myports.txt'],
+		function(res){
 			alert(res.result)
 		},
-		error : function(req, stat,err) {
+		function(req, stat,err) {
 			$('#log').html(err.message);
 		}
-	});
-
+	);
 }
 
 function savestring() {
-	var buf = new Blob(["テスト文字列"]);
+	rpccall(
+		'AlterOrg.SaveData',
+		['テスト文字列'],
+		function(res){
+			alert(res.result)
+		},
+		function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	);
+}
+
+function getfile() {
+	rpccall(
+		'AlterOrg.GetFile',
+		[{
+			hash : "QmUyjk8FBViMwqNSYfEHQ8kM6d57mYbtZiZ5mq9Z3vxnBe",
+			path : "/Users/emit7c/a"
+		}],
+		function(res){
+			alert(res.result)
+		},
+		function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	);
+}
+
+function getdata() {
+	rpccall(
+		'AlterOrg.GetData',
+		["QmUyjk8FBViMwqNSYfEHQ8kM6d57mYbtZiZ5mq9Z3vxnBe"],
+		function(res){
+			alert(res.result)
+		},
+		function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	);
+}
+
+function saveorg() {
+	rpccall(
+		'AlterOrg.UpdateOrgList',
+		"",
+		function(res){
+			alert(res.result)
+		},
+		function(req, stat,err) {
+			$('#log').html(err.message);
+		}
+	);
+}
+
+function rpccall(method, param, cb, cberr) {
 	var data = {
 		'jsonrpc':'2.0',
 		'id':id++,
-		'method':'AlterOrg.SaveData',
-		'params':[buf]
+		'method':method,
+		'params':param
 	};
 	$.ajax({
 		type: "POST",
@@ -230,22 +283,19 @@ function savestring() {
 		data: JSON.stringify(data),
 		dataType: 'json',
 		contentType: "application/json",
-		success: function(res){
-			alert(res.result)
-		},
-		error : function(req, stat,err) {
-			$('#log').html(err.message);
-		}
+		success: cb,
+		error : cberr
 	});
-
 }
-
 -->
 </script>
 <body>
 <input type="button" id="create" value="作成" onclick="create()">&nbsp;
-<input type="button" id="create" value="保存テスト" onclick="save()">&nbsp;
-<input type="button" id="create" value="文字保存テスト" onclick="savestring()">&nbsp;
+<input type="button" id="save" value="保存テスト" onclick="save()">&nbsp;
+<input type="button" id="savestring" value="文字保存テスト" onclick="savestring()">&nbsp;
+<input type="button" id="getfile" value="ファイル取得テスト" onclick="getfile()">&nbsp;
+<input type="button" id="getdata" value="データ取得テスト" onclick="getdata()">&nbsp;
+<input type="button" id="getdata" value="Org保存テスト" onclick="saveorg()">&nbsp;
 <div id="log"></div>
 <div id="state" style="width:100%"></div>
 </body>
