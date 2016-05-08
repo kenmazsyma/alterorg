@@ -1,4 +1,4 @@
-// svr/api.go
+// api.go
 // This source file enables access the functions of Alterorg
 //
 // Copyright holder is set forth in alterorg.md
