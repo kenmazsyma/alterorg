@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	//	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"time"
@@ -26,7 +27,7 @@ type jsonres struct {
 	Version string           `json:"jsonrpc"`
 	Result  *json.RawMessage `json:"result"`
 	Error   *json.RawMessage `json:"error"`
-	Id      uint64           `json:"id"`
+	Id      float64          `json:"id"`
 }
 
 type Unknown interface {
@@ -134,7 +135,7 @@ func Request(url string, method string, args []Unknown, reply Unknown) error {
 		Version: "2.0",
 		Method:  method,
 		Params:  args,
-		Id:      uint64(rand.Int63()),
+		Id:      uint64(rand.Int() / 0x10000000000),
 	})
 	fmt.Print(string(jsdata) + "\n")
 	req, err := http.NewRequest(
@@ -153,6 +154,8 @@ func Request(url string, method string, args []Unknown, reply Unknown) error {
 	}
 	defer resp.Body.Close()
 	var c jsonres
+	//contents, err := ioutil.ReadAll(resp.Body)
+	//fmt.Printf("11111111:%s\n", string(contents))
 	if err := json.NewDecoder(resp.Body).Decode(&c); err != nil {
 		return err
 	}

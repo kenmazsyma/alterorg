@@ -84,8 +84,6 @@ func Start() error {
 			return er
 		}
 	}
-	// TODO:move url to env file & not use sleep
-	//time.Sleep(10 * time.Second)
 	if SysEnv.EthRun != 0 {
 		cli.InitEth(SysEnv.EthUrl)
 		EthState = WAIT

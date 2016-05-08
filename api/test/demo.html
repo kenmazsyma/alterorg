@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alterorg Sample Implement</title>
+<link href="css/bootstrap.min.css" rel="stylesheet">
+<style>
+h1 { font-size:26px; margin-top:0px }
+#modalmes { color:#000 }
+#logo { height:40px; margin:6px 0px 6px 0px }
+#main { margin-top:0px }
+.bg-info { background-color:#ffffff}
+.hdr { background-color:#48a0f8; height:52px;}
+.btn-primary { background-color:#48a0f8; border-color:#4098f0 }
+.nav .dropdown .dropdown-toggle, 
+.nav .dropdown .dropdown-toggle:hover, 
+.nav .dropdown .dropdown-toggle:focus { color:#fff; background-color:#48a0f8; }
+</style>
+<script type="text/javascript">
+<!--
+
+function openModal(message){
+	$('#modalmes').html(message);
+	$('#modal').modal({backdrop: 'static', keyboard: false});
+}
+
+function closeModal() {
+	$("#modal").modal('hide');
+}
+
+function outputLog(msg) {
+	console.log(msg);
+}
+
+function detailOrg(hash) {
+	alert(hash);
+}
+
+
+var orgLst = {};
+function draw() {
+	$('#orglist').html('');
+	var code = '';
+	for ( var i in orgLst ) {
+		code += '<li role="presentation">'
+			  + '<a role="menuitem" tabindex="-1" href="#" onclick="detailOrg('
+			  + "'" + i + "'" 
+			  + ')">'
+			  + i
+			  +'</a></li>';
+	}
+	code += '<li role="presentation">'
+		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newOrg()">'
+		  + 'Create new Org'
+		  +'</a></li>';
+	$('#orglist').append(code);
+}
+
+
+
+
+function getOrgList() {
+	rpccall(
+		'AlterOrg.QueryOrgLst',
+		[],
+		function(res){
+			orgLst = {};
+			for (var i in res.result ) {
+				orgLst[res.result[i]] = {}
+			}
+			draw();
+		},
+		function(req, stat,err) {
+			outputLog(err.message);
+		}
+	);
+}
+
+var intervalId = -1;
+function waitInitialize() {
+	rpccall(
+		'AlterOrg.GetStatus',
+		[],
+		function(res){
+			if (res.result!=='RUN') {
+				// wait for initialization
+			} else {
+				window.clearInterval(intervalId);
+				closeModal();
+				getOrgList();
+			}
+		},
+		function(req, stat,err) {
+			console.log(err.message);
+		}
+	);
+}
+
+window.onload = function(){
+//	initSv("http://localhost:1234");
+//	openModal('connecting to AlterOrg server...');
+//	intervalId = window.setInterval(waitInitialize, 500);
+	Vw.home();
+}
+
+
+
+-->
+</script>
+</head>
+<body>
+<div class="container" id="header">
+<div class="col-xs-10 hdr">
+  <img src="img/logo.gif" id="logo">
+</div>
+<div class="col-xs-2 hdr">
+  <div class="collapse navbar-collapse" id="navs">
+    <ul class="nav navbar-nav">
+    <li class="dropdown">
+      <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+  	  Orgs <b class="caret"></b>
+  	</a>
+  	<ul class="dropdown-menu" id="orglist">
+		<!-- for supporting implements -->
+	 <li role="presentation">
+		  <a role="menuitem" tabindex="-1" href="#" onclick="Vw.newOrg()">
+		  Create new Org
+		  </a></li>
+	    <!-- for supporting implements -->
+  	  
+  	</ul>
+    </li>
+    </ul>
+  </div>
+</div>
+<div class="modal" id="modal"><div class="modal-dialog"><div class="modal-content">
+	<div class="modal-body"><span id="modalmes"></span></div>
+</div></div></div>
+</div>
+<div class="container" id="bread">
+</div>
+<div class="container" id="main">
+</div>
+<script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
+<script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script type="text/javascript" src="js/alterorg.js"></script>
+
+
+</body>
+</html>

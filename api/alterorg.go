@@ -118,9 +118,15 @@ func (self *AlterOrg) QueryOrgLst(prm string, rslt *[]string) error {
 	return nil
 }
 
-func (self *AlterOrg) UpdateOrgLgst(prm []string, rslt *string) error {
+// TODO:support an orgs isn't mined yet(save the tx hash)
+func (self *AlterOrg) UpdateOrgLst(prm []string, rslt *string) error {
 	var er error
+	fmt.Printf("UpdateOrgLst\n")
 	er = cmn.UpdateOrgList(prm)
+	if er != nil {
+		return er
+	}
+	er = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
 	if er != nil {
 		return er
 	}

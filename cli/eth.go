@@ -134,7 +134,8 @@ func GetEthListening() (bool, error) {
 		fmt.Printf("\nGetEthListening:%s\n", er.Error())
 		return false, er
 	}
-	return ret, nil
+	fmt.Printf("ret:%d", ret)
+	return true, nil
 }
 
 func NewContract(code string, param []string, abi []interface{}) (string, error) {
