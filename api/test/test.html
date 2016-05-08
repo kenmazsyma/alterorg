@@ -143,7 +143,7 @@ window.onload = function() {
 function checkInit() {
 	var getOrgList = function() {
 		rpccall(
-			'AlterOrg.QueryOrgLst',
+			'Alterorg.QueryOrgLst',
 			[],
 			function(res){
 				for ( var i in res.result ) {
@@ -167,7 +167,7 @@ function checkInit() {
 	};
 	try {
 		rpccall(
-			'AlterOrg.GetStatus',
+			'Alterorg.GetStatus',
 			[],
 			function(res){
 				if (res.result!=='RUN') {
@@ -181,7 +181,7 @@ function checkInit() {
 			},
 			function(req, stat,err) {
 				//window.clearInterval(iid);
-				$('#log').html('failed to access to AlterOrg Server' + err.message);
+				$('#log').html('failed to access to Alterorg Server' + err.message);
 			}
 		);
 	} catch (e) {
@@ -191,7 +191,7 @@ function checkInit() {
 
 function updateOrgsList(lst) {
 	rpccall(
-		'AlterOrg.UpdateOrgLst',
+		'Alterorg.UpdateOrgLst',
 		lst,
 		function(res){
 			if (res.result!=='') {
@@ -241,7 +241,7 @@ function checkRevision(tx) {
 
 function save() {
 	rpccall(
-		'AlterOrg.SaveFile',
+		'Alterorg.SaveFile',
 		['/Users/emit7c/myports.txt'],
 		function(res){
 			alert(res.result)
@@ -254,7 +254,7 @@ function save() {
 
 function savestring() {
 	rpccall(
-		'AlterOrg.SaveData',
+		'Alterorg.SaveData',
 		['テスト文字列'],
 		function(res){
 			alert(res.result)
@@ -267,7 +267,7 @@ function savestring() {
 
 function getfile() {
 	rpccall(
-		'AlterOrg.GetFile',
+		'Alterorg.GetFile',
 		[{
 			hash : "QmUyjk8FBViMwqNSYfEHQ8kM6d57mYbtZiZ5mq9Z3vxnBe",
 			path : "/Users/emit7c/a"
@@ -283,7 +283,7 @@ function getfile() {
 
 function getdata() {
 	rpccall(
-		'AlterOrg.GetData',
+		'Alterorg.GetData',
 		["QmUyjk8FBViMwqNSYfEHQ8kM6d57mYbtZiZ5mq9Z3vxnBe"],
 		function(res){
 			alert(res.result)
@@ -296,7 +296,7 @@ function getdata() {
 
 function saveorg() {
 	rpccall(
-		'AlterOrg.UpdateOrgList',
+		'Alterorg.UpdateOrgList',
 		"",
 		function(res){
 			alert(res.result)

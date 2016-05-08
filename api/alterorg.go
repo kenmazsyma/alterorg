@@ -18,14 +18,14 @@ type ArgGetFile struct {
 	Path string `json:"path"`
 }
 
-type AlterOrg struct {
+type Alterorg struct {
 }
 
-func NewAlterorg() *AlterOrg {
-	return &AlterOrg{}
+func NewAlterorg() *Alterorg {
+	return &Alterorg{}
 }
 
-func (self *AlterOrg) QuerySetting(name []string, rslt *[]string) error {
+func (self *Alterorg) QuerySetting(name []string, rslt *[]string) error {
 	var er error
 	*rslt, er = cmn.QuerySysEnv(name)
 	if er != nil {
@@ -35,7 +35,7 @@ func (self *AlterOrg) QuerySetting(name []string, rslt *[]string) error {
 	return nil
 }
 
-func (self *AlterOrg) UpdateSetting(val []ArgUpdSet, rslt *bool) error {
+func (self *Alterorg) UpdateSetting(val []ArgUpdSet, rslt *bool) error {
 	*rslt = false
 	for i := range val {
 		er := cmn.UpdateSysEnv(val[i].Key, val[i].Val)
@@ -54,7 +54,7 @@ func (self *AlterOrg) UpdateSetting(val []ArgUpdSet, rslt *bool) error {
 }
 
 // register file to IPFS
-func (self *AlterOrg) SaveFile(path string, rslt *string) error {
+func (self *Alterorg) SaveFile(path string, rslt *string) error {
 	var er error
 	*rslt, er = cli.IpfsAddFile(path)
 	if er != nil {
@@ -65,7 +65,7 @@ func (self *AlterOrg) SaveFile(path string, rslt *string) error {
 }
 
 // register file to IPFS
-func (self *AlterOrg) SaveData(data string, rslt *string) error {
+func (self *Alterorg) SaveData(data string, rslt *string) error {
 	var er error
 	reader := strings.NewReader(data)
 	*rslt, er = cli.IpfsAdd(reader)
@@ -76,7 +76,7 @@ func (self *AlterOrg) SaveData(data string, rslt *string) error {
 	return nil
 }
 
-func (self *AlterOrg) GetFile(arg ArgGetFile, rslt *string) error {
+func (self *Alterorg) GetFile(arg ArgGetFile, rslt *string) error {
 	var er error
 	er = cli.IpfsGet(arg.Hash, arg.Path)
 	if er != nil {
@@ -86,7 +86,7 @@ func (self *AlterOrg) GetFile(arg ArgGetFile, rslt *string) error {
 	return nil
 }
 
-func (self *AlterOrg) GetData(hash string, rslt *string) error {
+func (self *Alterorg) GetData(hash string, rslt *string) error {
 	data, er := cli.IpfsBlockGet(hash)
 	if er != nil {
 		fmt.Printf("GetData:%s\n", er.Error())
@@ -97,7 +97,7 @@ func (self *AlterOrg) GetData(hash string, rslt *string) error {
 }
 
 // return system status
-func (self *AlterOrg) GetStatus(prm string, rslt *string) error {
+func (self *Alterorg) GetStatus(prm string, rslt *string) error {
 	switch {
 	case cmn.EthState == cmn.RUN && cmn.IpfsState == cmn.RUN:
 		*rslt = "RUN"
@@ -109,9 +109,9 @@ func (self *AlterOrg) GetStatus(prm string, rslt *string) error {
 	return nil
 }
 
-func (self *AlterOrg) QueryOrgLst(prm string, rslt *[]string) error {
+func (self *Alterorg) QueryAssemblyLst(prm string, rslt *[]string) error {
 	var er error
-	*rslt, er = cmn.QueryOrgList()
+	*rslt, er = cmn.QueryAssemblyList()
 	if er != nil {
 		return er
 	}
@@ -119,10 +119,10 @@ func (self *AlterOrg) QueryOrgLst(prm string, rslt *[]string) error {
 }
 
 // TODO:support an orgs isn't mined yet(save the tx hash)
-func (self *AlterOrg) UpdateOrgLst(prm []string, rslt *string) error {
+func (self *Alterorg) UpdateAssemblyLst(prm []string, rslt *string) error {
 	var er error
-	fmt.Printf("UpdateOrgLst\n")
-	er = cmn.UpdateOrgList(prm)
+	fmt.Printf("UpdateAssemblyLst\n")
+	er = cmn.UpdateAssemblyList(prm)
 	if er != nil {
 		return er
 	}

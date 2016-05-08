@@ -33,7 +33,7 @@ function outputLog(msg) {
 	console.log(msg);
 }
 
-function detailOrg(hash) {
+function detailAssembly(hash) {
 	alert(hash);
 }
 
@@ -44,15 +44,15 @@ function draw() {
 	var code = '';
 	for ( var i in orgLst ) {
 		code += '<li role="presentation">'
-			  + '<a role="menuitem" tabindex="-1" href="#" onclick="detailOrg('
+			  + '<a role="menuitem" tabindex="-1" href="#" onclick="detailAssembly('
 			  + "'" + i + "'" 
 			  + ')">'
 			  + i
 			  +'</a></li>';
 	}
 	code += '<li role="presentation">'
-		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newOrg()">'
-		  + 'Create new Org'
+		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newAssembly()">'
+		  + 'Create new Assembly'
 		  +'</a></li>';
 	$('#orglist').append(code);
 }
@@ -60,9 +60,9 @@ function draw() {
 
 
 
-function getOrgList() {
+function getAssemblyList() {
 	rpccall(
-		'AlterOrg.QueryOrgLst',
+		'Alterorg.QueryAssemblyLst',
 		[],
 		function(res){
 			orgLst = {};
@@ -80,7 +80,7 @@ function getOrgList() {
 var intervalId = -1;
 function waitInitialize() {
 	rpccall(
-		'AlterOrg.GetStatus',
+		'Alterorg.GetStatus',
 		[],
 		function(res){
 			if (res.result!=='RUN') {
@@ -88,7 +88,7 @@ function waitInitialize() {
 			} else {
 				window.clearInterval(intervalId);
 				closeModal();
-				getOrgList();
+				getAssemblyList();
 			}
 		},
 		function(req, stat,err) {
@@ -99,7 +99,7 @@ function waitInitialize() {
 
 window.onload = function(){
 //	initSv("http://localhost:1234");
-//	openModal('connecting to AlterOrg server...');
+//	openModal('connecting to Alterorg server...');
 //	intervalId = window.setInterval(waitInitialize, 500);
 	Vw.home();
 }
@@ -119,13 +119,13 @@ window.onload = function(){
     <ul class="nav navbar-nav">
     <li class="dropdown">
       <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-  	  Orgs <b class="caret"></b>
+  	  Assembly <b class="caret"></b>
   	</a>
   	<ul class="dropdown-menu" id="orglist">
 		<!-- for supporting implements -->
 	 <li role="presentation">
-		  <a role="menuitem" tabindex="-1" href="#" onclick="Vw.newOrg()">
-		  Create new Org
+		  <a role="menuitem" tabindex="-1" href="#" onclick="Vw.newAssembly()">
+		  Create new Assembly
 		  </a></li>
 	    <!-- for supporting implements -->
   	  

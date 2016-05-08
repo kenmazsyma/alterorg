@@ -60,11 +60,11 @@ func SaveApEnv(path string) error {
 	return nil
 }
 
-func QueryOrgList() ([]string, error) {
+func QueryAssemblyList() ([]string, error) {
 	return ApEnv.Orgs, nil
 }
 
-func UpdateOrgList(val []string) error {
+func UpdateAssemblyList(val []string) error {
 	ApEnv.Orgs = val
 	return nil
 }

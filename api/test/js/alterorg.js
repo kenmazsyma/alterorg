@@ -52,9 +52,9 @@ Vw = {
 		$('#main').html('');
 	},
 
-	newOrg : function() {
+	newAssembly : function() {
 		var fm = ''
-		 + '<h1>Create new alterorg</h1>'
+		 + '<h1>Create new assembly</h1>'
 		 + '<div class="form-group">'
 		 + '<label>name</label>'
 		 + '<input type="text" name="oname" class="form-control" side="30">'
