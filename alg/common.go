@@ -47,13 +47,6 @@ func checkIPFSHash(hash string) bool {
 	return true
 }
 
-func checkAddress(address string) bool {
-	if m, e := regexp.MatchString("^[0x]*[a-zA-Z0-9]{40}$", address); !m || e != nil {
-		return false
-	}
-	return true
-}
-
 func extractFunctionABI(abif interface{}, name string) (interface{}, error) {
 	abi := abif.([]interface{})
 	for i := 0; i < len(abi); i++ {
@@ -107,4 +100,11 @@ func binToMap(abi []interface{}, data string) (map[string]string, error) {
 	}
 	return ret, nil
 
+}
+
+func checkAddress(address string) bool {
+	if m, e := regexp.MatchString("^[0x]*[a-zA-Z0-9]{40}$", address); !m || e != nil {
+		return false
+	}
+	return true
 }

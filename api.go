@@ -50,6 +50,7 @@ func main() {
 		return
 	}
 	solidity.Init_assembly()
+	solidity.Init_usermap()
 	sv := rpc.NewServer()
 	sv.Register(api.NewAssembly())
 	sv.Register(api.NewAlterorg())

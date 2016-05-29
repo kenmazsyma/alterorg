@@ -40,6 +40,7 @@ func run(param string) error {
 		return err
 	}
 	err = save(param, abi, bin)
+	fmt.Printf("saved!\n")
 	if err != nil {
 		return err
 	}
@@ -92,15 +93,26 @@ func solc(param string, arg string, sep string) (ret map[string]string, err erro
 func save(param string, abi map[string]string, bin map[string]string) error {
 	content := bytes.NewBuffer([]byte{})
 	content.WriteString("package solidity\n")
-	content.WriteString(`import "encoding/json"` + "\n")
+	content.WriteString("import (\n")
+	content.WriteString(`    "bytes"` + "\n")
+	content.WriteString(`    "github.com/ethereum/go-ethereum/accounts/abi"` + "\n")
+	content.WriteString(")\n")
 	for k, _ := range abi {
-		content.WriteString("var Abi_" + k + " interface{}\n")
+		content.WriteString("var Abi_" + k + " abi.ABI\n")
 	}
-	content.WriteString("func Init_" + param + "(){\n")
+	content.WriteString("func Init_" + param + "() error{\n")
+	content.WriteString("    var v *bytes.Buffer\n")
+	content.WriteString("    var er error\n")
 	for k, v := range abi {
-		content.WriteString("    json.Unmarshal([]byte(`" + v + "`), &Abi_" + k + ")\n")
+		content.WriteString("    v=bytes.NewBufferString(`" + v + "`)\n")
+		content.WriteString("    Abi_" + k + ", er=abi.JSON(v)\n")
+		content.WriteString("    if er != nil {\n")
+		content.WriteString("        return er\n")
+		content.WriteString("    }\n")
 	}
+	content.WriteString("    return nil\n")
 	content.WriteString("}\n")
+
 	for k, v := range bin {
 		content.WriteString("var Bin_" + k + `="0x` + v + `"` + "\n")
 	}

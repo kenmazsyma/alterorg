@@ -8,7 +8,8 @@ import (
 )
 
 type ApEnvSet struct {
-	Orgs []string `json:"orgs"`
+	Orgs   []string `json:"orgs"`
+	UsrMap string   `json:"usrmap"`
 }
 
 var ApEnv ApEnvSet

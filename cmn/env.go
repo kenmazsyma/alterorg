@@ -5,9 +5,10 @@ import (
 	///	"errors"
 	"fmt"
 	//	"io/ioutil"
-	//	"os"
+	"../alg"
 	"../cli"
 	"bytes"
+	"os"
 	"os/exec"
 	"strings"
 	"syscall"
@@ -18,6 +19,7 @@ var ethInput bytes.Buffer
 var ipfsInput bytes.Buffer
 var ethCmd *exec.Cmd
 var ipfsCmd *exec.Cmd
+var Iwasmined bool
 
 type appOutput struct {
 	Callback func(string)
@@ -44,7 +46,7 @@ var IpfsState int
 
 func Start() error {
 	if SysEnv.EthRun != 0 {
-		ethOutput := &appOutput{
+		/*ethOutput := &appOutput{
 			Callback: func(text string) {
 				fmt.Println("eth:" + text)
 			},
@@ -52,11 +54,25 @@ func Start() error {
 				fmt.Printf("EthWrite:::%s\n", text)
 				return 0, nil
 			},
-		}
+		}*/
+		/*ethOutput2 := &appOutput{
+			Callback: func(text string) {
+				fmt.Println("eth:" + text)
+			},
+			write: func(text []byte) (int, error) {
+				fmt.Printf("EthError:::%s\n", text)
+				return 0, nil
+			},
+		}*/
 		prm := splitArgs(SysEnv.EthPrm)
 		fmt.Printf("EthPrm:%s", strings.Join(prm, ":::"))
 		ethCmd = exec.Command(SysEnv.EthCmd, prm...)
-		ethCmd.Stdout = ethOutput
+		ethCmd.Stdout = os.Stdout //ethOutput
+		//ethCmd.Stderr = ethOutput2
+		//	ethCmd.CombinedOutput = func(text []byte) (int, error) {
+		//		fmt.Printf("EthWrite:::%s\n", text)
+		//		return 0, nil
+		//	}
 		ethCmd.Stdin = &ethInput
 		er := ethCmd.Start()
 		if er != nil {
@@ -88,6 +104,7 @@ func Start() error {
 		cli.InitEth(SysEnv.EthUrl)
 		EthState = WAIT
 		go func() {
+			run := false
 			for i := 0; i < 10; i++ {
 				time.Sleep(1 * time.Second)
 				start, er := cli.GetEthListening()
@@ -95,14 +112,22 @@ func Start() error {
 					EthState = ERROR
 				} else {
 					if start == true {
-						EthState = RUN
+						// TODO:now searching a way of getting unlock timing
+						// if delete below sleep, "account is locked" error occurs
+						// because unlock proc in geth is not called yet at this timing.
+						time.Sleep(2 * time.Second)
+						run = true
 						fmt.Printf("Eth:Run:\n")
 						break
 					}
 				}
 			}
-			if EthState == RUN {
-				cli.GetCoinbase()
+			if run {
+				time.Sleep(5 * time.Second)
+				initEnv()
+				//cli.GetCoinbase()
+				//cli.GetUsrSet()
+				EthState = RUN
 			}
 		}()
 	} else {
@@ -144,4 +169,63 @@ func splitArgs(txt string) []string {
 		prm[i] = prm[i][start:end]
 	}
 	return prm
+}
+
+func IsStart() bool {
+	if (SysEnv.EthRun == 0 || EthState == RUN) && (SysEnv.IpfsRun == 0 || IpfsState == RUN) {
+		return true
+	}
+	return false
+}
+
+func initEnv() error {
+	er := cli.GetCoinbase()
+	if er != nil {
+		return er
+	}
+	er = getUsrs()
+	if er != nil {
+		return er
+	}
+	return nil
+}
+
+func getUsrs() error {
+	// TODO:implements setting to global member
+	ret, er := alg.UserMap_GetUsrs(ApEnv.UsrMap)
+	if er != nil {
+		fmt.Printf("exception occued in getUsers1:%s\n", er.Error())
+		return er
+	}
+	fmt.Printf("AddressList:%s\n", strings.Join(ret, "\n"))
+	Iwasmined := false
+	for _, adrs := range ret {
+		fmt.Printf("ards:%s\n", adrs)
+		if adrs == cli.Coinbase {
+			Iwasmined = true
+		}
+	}
+	if !Iwasmined {
+		// TODO:change to correct value
+		fmt.Printf("ADDRESS:%s\n", ApEnv.UsrMap)
+		tx, er := alg.UserMap_Reg(ApEnv.UsrMap, "0xaAaAfFfzfz", "for test")
+		if er != nil {
+			fmt.Printf("exception occued in getUsers2:%s\n", er.Error())
+			return er
+		}
+		ret = append(ret, cli.Coinbase)
+		go func() {
+			for !Iwasmined {
+				time.Sleep(time.Second * 10)
+				adrs, _, _, er := alg.UserMap_CheckReg(tx)
+				if adrs != "" {
+					Iwasmined = true
+				}
+				if er != nil {
+					fmt.Printf("%s", er.Error())
+				}
+			}
+		}()
+	}
+	return nil
 }

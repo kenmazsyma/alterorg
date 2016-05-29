@@ -4,10 +4,10 @@ package alg
 
 import (
 	"../cli"
-	"../solidity"
+	sol "../solidity"
+	"encoding/hex"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 )
 
@@ -33,11 +33,7 @@ func NewAssembly(proposal string, discuss string) (string, error) {
 		return "", errors.New("param for discuss is not correct format")
 	}
 	param := []string{proposal, discuss}
-	abi, er := extractInputABI(solidity.Abi_Assembly.([]interface{}), "")
-	if er != nil {
-		return "", er
-	}
-	address, er := cli.NewContract(solidity.Bin_Assembly, param, abi)
+	address, er := cli.NewContract(sol.Bin_Assembly, sol.Abi_Assembly, param)
 	if er != nil {
 		return "", er
 	}
@@ -49,16 +45,8 @@ func Assembly_GetProposal(address string) (string, string, string, error) {
 	if !checkAddress(address) {
 		return "", "", "", errors.New("param for address is not correct format")
 	}
-	param := []string{}
-	abii, er := extractInputABI(solidity.Abi_Assembly, funcname)
-	if er != nil {
-		return "", "", "", er
-	}
-	abio, er := extractOutputABI(solidity.Abi_Assembly, funcname)
-	if er != nil {
-		return "", "", "", er
-	}
-	ret, er := cli.Call(address, funcname, param, abii, abio)
+	var ret []string
+	er := cli.Call(address, ret, funcname, sol.Abi_Assembly)
 	if er != nil {
 		return "", "", "", er
 	}
@@ -78,11 +66,7 @@ func Assembly_RevisionProposal(adrs string, doc string, discuss string) (string,
 		return "", errors.New("param for discuss is not correct format")
 	}
 	param := []string{doc, discuss}
-	abi, er := extractInputABI(solidity.Abi_Assembly, funcname)
-	if er != nil {
-		return "", er
-	}
-	tx, er := cli.Send(adrs, funcname, param, abi)
+	tx, er := cli.Send(adrs, funcname, sol.Abi_Assembly, param)
 	if er != nil {
 		return "", er
 	}
@@ -90,12 +74,13 @@ func Assembly_RevisionProposal(adrs string, doc string, discuss string) (string,
 	return tx, nil
 }
 
+type typeCheckRevision struct {
+	Adrs string `json:"address"`
+	Ver  uint   `json:"version"`
+}
+
 func Assembly_CheckRevision(tx string) (string, uint, error) {
 	funcname := "onRevisionedProposal"
-	abi, er := extractInputABI(solidity.Abi_Assembly, funcname)
-	if er != nil {
-		return "", 0, er
-	}
 	res, er := cli.CheckContractTransaction(tx)
 	if er != nil {
 		return "", 0, er
@@ -105,10 +90,14 @@ func Assembly_CheckRevision(tx string) (string, uint, error) {
 	}
 	fmt.Printf("res.LOG:%d\n", len(res.LOG))
 	fmt.Printf("res.LOG[0].Data:%s\n", res.LOG[0].Data)
-	data, er := binToMap(abi, res.LOG[0].Data)
+	bdata, er := hex.DecodeString(res.LOG[0].Data)
 	if er != nil {
 		return "", 0, er
 	}
-	ver, _ := strconv.ParseInt(data["version"], 10, 32)
-	return data["adrs"], uint(ver), nil
+	var ret typeCheckRevision
+	er = sol.Abi_Assembly.Unpack(ret, funcname, bdata)
+	if er != nil {
+		return "", 0, er
+	}
+	return ret.Adrs, ret.Ver, nil
 }
