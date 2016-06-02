@@ -3,9 +3,9 @@
 package cli
 
 import (
+	"./abi"
 	"encoding/hex"
 	"fmt"
-	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 var baseurl string

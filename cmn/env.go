@@ -217,8 +217,9 @@ func getUsrs() error {
 		go func() {
 			for !Iwasmined {
 				time.Sleep(time.Second * 10)
-				adrs, _, _, er := alg.UserMap_CheckReg(tx)
+				adrs, cont, isnew, er := alg.UserMap_CheckReg(tx)
 				if adrs != "" {
+					fmt.Printf("I wasmined!:%s:%s:%s\n", adrs, cont, isnew)
 					Iwasmined = true
 				}
 				if er != nil {

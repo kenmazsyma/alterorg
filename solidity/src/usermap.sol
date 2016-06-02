@@ -9,11 +9,12 @@ contract UserMap {
 
 	function reg(bytes node, string n) {
 		User user = new User(node, n);
-		usermap[msg.sender] = user;
 		if (usermap[msg.sender]==address(0x0)) {
 			list.push(msg.sender);
+			usermap[msg.sender] = user;
 			onReg(msg.sender, user, true);
 		} else {
+			usermap[msg.sender] = user;
 			onReg(msg.sender, user, false);
 		}
 	}

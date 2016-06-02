@@ -40,11 +40,11 @@ func UserMap_Reg(address string, node string, name string) (string, error) {
 	return tx, nil
 }
 
-type typeCheckReg struct {
-	Adrs  ethcmn.Address `json:"adrs"`
-	Cont  ethcmn.Address `json:"cont"`
-	IsNew bool           `json:"isNew"`
-}
+//type typeCheckReg struct {
+//	Adrs  ethcmn.Address `json:"adrs"`
+//	Cont  ethcmn.Address `json:"cont"`
+//	IsNew bool           `json:"isNew"`
+//}
 
 func UserMap_CheckReg(tx string) (string, string, bool, error) {
 	funcname := "onReg"
@@ -57,13 +57,21 @@ func UserMap_CheckReg(tx string) (string, string, bool, error) {
 	}
 	fmt.Printf("res.LOG:%d\n", len(res.LOG))
 	fmt.Printf("res.LOG[0].Data:%s\n", res.LOG[0].Data)
-	bdata, er := hex.DecodeString(res.LOG[0].Data)
+	bdata, er := hex.DecodeString(res.LOG[0].Data[2:])
 	if er != nil {
 		return "", "", false, er
 	}
-	var ret typeCheckReg
-	er = sol.Abi_UserMap.Unpack(ret, funcname, bdata)
-	return ret.Adrs.Str(), ret.Cont.Str(), ret.IsNew, nil
+	//var ret typeCheckReg
+	var (
+		var1 = new(ethcmn.Address)
+		var2 = new(ethcmn.Address)
+		var3 = new(bool)
+	)
+	//ret := []interface{}{new(ethcmn.Address), new(ethcmn.Address), new(bool)}
+	ret := []interface{}{var1, var2, var3}
+	er = sol.Abi_UserMap.Unpack(&ret, funcname, bdata)
+	//return ret[0].(*ethcmn.Address).Str(), ret[1].(*ethcmn.Address).Str(), *(ret[2].(*bool)), nil
+	return var1.Hex(), var2.Hex(), *var3, nil
 }
 
 func UserMap_GetUsrs(address string) ([]string, error) {
@@ -79,7 +87,7 @@ func UserMap_GetUsrs(address string) ([]string, error) {
 	}
 	var ret []string
 	for _, v := range adss {
-		ret = append(ret, v.Str())
+		ret = append(ret, v.Hex())
 	}
 	return ret, nil
 }
