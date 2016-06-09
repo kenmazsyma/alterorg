@@ -20,6 +20,7 @@ var ipfsInput bytes.Buffer
 var ethCmd *exec.Cmd
 var ipfsCmd *exec.Cmd
 var Iwasmined bool
+var UseLst []string
 
 type appOutput struct {
 	Callback func(string)
@@ -191,15 +192,14 @@ func initEnv() error {
 }
 
 func getUsrs() error {
-	// TODO:implements setting to global member
-	ret, er := alg.UserMap_GetUsrs(ApEnv.UsrMap)
+	UsrLst, er := alg.UserMap_GetUsrs(ApEnv.UsrMap)
 	if er != nil {
 		fmt.Printf("exception occued in getUsers1:%s\n", er.Error())
 		return er
 	}
-	fmt.Printf("AddressList:%s\n", strings.Join(ret, "\n"))
+	fmt.Printf("AddressList:%s\n", strings.Join(UsrLst, "\n"))
 	Iwasmined := false
-	for _, adrs := range ret {
+	for _, adrs := range UsrLst {
 		fmt.Printf("ards:%s\n", adrs)
 		if adrs == cli.Coinbase {
 			Iwasmined = true
@@ -213,10 +213,10 @@ func getUsrs() error {
 			fmt.Printf("exception occued in getUsers2:%s\n", er.Error())
 			return er
 		}
-		ret = append(ret, cli.Coinbase)
+		UsrLst = append(UsrLst, cli.Coinbase)
 		go func() {
 			for !Iwasmined {
-				time.Sleep(time.Second * 10)
+				time.Sleep(time.Second * 5)
 				adrs, cont, isnew, er := alg.UserMap_CheckReg(tx)
 				if adrs != "" {
 					fmt.Printf("I wasmined!:%s:%s:%s\n", adrs, cont, isnew)
