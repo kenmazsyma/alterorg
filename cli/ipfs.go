@@ -3,21 +3,27 @@
 package cli
 
 import (
-	//"encoding/json"
-	ipfs "github.com/ipfs/go-ipfs-api"
-	//ipfs "../../go-ipfs-api"
 	"errors"
 	"fmt"
+	ipfs "github.com/ipfs/go-ipfs-api"
+	pb "github.com/ipfs/go-ipfs/unixfs/pb"
+	proto "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"
 	"io"
 	"os"
 )
 
 var ipfsurl string
 var shell *ipfs.Shell
+var myid string
 
 func InitIpfs(url string) error {
 	ipfsurl = url
 	shell = ipfs.NewShell(ipfsurl)
+	out, err := shell.ID()
+	if err != nil {
+		return err
+	}
+	myid = out.ID
 	return nil
 }
 
@@ -52,11 +58,7 @@ var hASH_EMPTY_DIR = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
 var ERR_IpfsCreateIpfsDir_01 = "01" // ipns link is created as a file
 var ERR_IpfsCreateIpfsDir_02 = "02" // dir which is used for boards of alterorg is created as a file
 func IpfsCreateBoardDir() error {
-	out, err := shell.ID()
-	if err != nil {
-		return err
-	}
-	adrs, err := shell.Resolve(out.ID)
+	adrs, err := getIpnsAddr()
 	if err != nil {
 		return err
 	}
@@ -83,25 +85,98 @@ func IpfsCreateBoardDir() error {
 		}
 		// if the directory is not created yet
 		if nodir {
-			obj.Links = append(obj.Links, ipfs.ObjectLink{Name: DIR_IPFS_BOARD, Hash: hASH_EMPTY_DIR, Size: 3})
+			obj.Links = append(obj.Links, ipfs.ObjectLink{Name: DIR_IPFS_BOARD, Hash: hASH_EMPTY_DIR /*, Size: 3*/})
+			size := uint64(0)
+			buf, err := proto.Marshal(&pb.Data{Type: pb.Data_Directory.Enum(), Data: []byte(""), Filesize: &size})
+			if err != nil {
+				return err
+			}
+			obj.Data = string(buf)
+			if err != nil {
+				return err
+			}
 			newhash, err := shell.ObjectPut(obj)
 			if err != nil {
 				return err
 			}
+			fmt.Printf("NEW_NS:%s\n", newhash)
 			err = shell.Publish("", newhash)
 			if err != nil {
 				return err
 			}
 		}
+		fmt.Printf("Dir5\n")
 	}
 	return nil
 }
 
-// dir:1, file:2
-func IpfsList(path string) ([]*ipfs.LsLink, error) {
-	return shell.List(path)
+func getIpnsAddr() (string, error) {
+	adrs, err := shell.Resolve(myid)
+	if err != nil {
+		return "", err
+	}
+	return adrs, nil
 }
 
-func IpfsObjGet(path string) (*ipfs.IpfsObject, error) {
-	return shell.ObjectGet(path)
+var ERR_IpfsWriteToBoard_01 = "01" // dir for boards is not created yet
+var ERR_IpfsWriteToBoard_02 = "02" // failed to get dir for boards
+func IpfsWriteToBoard(data string, n string) error {
+	size := uint64(len(data))
+	buf, err := proto.Marshal(&pb.Data{Type: pb.Data_File.Enum(), Data: []byte(data), Filesize: &size})
+	if err != nil {
+		return err
+	}
+	objwr := ipfs.IpfsObject{Links: []ipfs.ObjectLink{}, Data: string(buf)}
+	hash, err := shell.ObjectPut(&objwr)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("BoardHash : %s\n", hash)
+	nsadrs, err := getIpnsAddr()
+	if err != nil {
+		return err
+	}
+	// boarddir
+	obj, err := shell.ObjectGet(nsadrs + "/" + DIR_IPFS_BOARD)
+	if err != nil {
+		if err.Error()[0:6] == "no link" {
+			return errors.New(ERR_IpfsWriteToBoard_01)
+		}
+		return err
+	}
+	obj.Links = append(obj.Links, ipfs.ObjectLink{Name: n, Hash: hash, Size: uint64(len(data) + 100)})
+	hash, err = shell.ObjectPut(obj)
+	if err != nil {
+		return err
+	}
+	fmt.Printf("NewHash for boardforalterorg : %s\n", hash)
+
+	// ipnsdir
+	nsobj, err := shell.ObjectGet(nsadrs)
+	if err != nil {
+		return err
+	}
+	found := false
+	for i, v := range nsobj.Links {
+		if v.Name == DIR_IPFS_BOARD {
+			v.Hash = hash
+			//	v.Size = 100
+			nsobj.Links[i] = v
+			found = true
+			break
+		}
+	}
+	if found == false {
+		return errors.New(ERR_IpfsWriteToBoard_02)
+	}
+	nwnshash, err := shell.ObjectPut(nsobj)
+	fmt.Printf("New Ns Hash including new boarddir:%s\n", nwnshash)
+	// TODO:implements a process for async after implementing "wait" option to IPFS
+	err = shell.Publish("", nwnshash)
+	if err != nil {
+		fmt.Printf("14\n")
+		return err
+	}
+
+	return nil
 }
