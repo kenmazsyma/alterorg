@@ -15,6 +15,7 @@ import (
 var ipfsurl string
 var shell *ipfs.Shell
 var myid string
+var nsAdrs string
 
 func InitIpfs(url string) error {
 	ipfsurl = url
@@ -24,6 +25,7 @@ func InitIpfs(url string) error {
 		return err
 	}
 	myid = out.ID
+	getIpnsAdrs()
 	return nil
 }
 
@@ -58,18 +60,14 @@ var hASH_EMPTY_DIR = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
 var ERR_IpfsCreateIpfsDir_01 = "01" // ipns link is created as a file
 var ERR_IpfsCreateIpfsDir_02 = "02" // dir which is used for boards of alterorg is created as a file
 func IpfsCreateBoardDir() error {
-	adrs, err := getIpnsAddr()
+	obj, err := shell.ObjectGet(nsAdrs)
 	if err != nil {
 		return err
 	}
-	obj, err := shell.ObjectGet(adrs)
-	if err != nil {
-		return err
-	}
-	if len(obj.Links) == 0 && adrs != dIR_IPFS+hASH_EMPTY_DIR { // link to a file
+	if len(obj.Links) == 0 && nsAdrs != dIR_IPFS+hASH_EMPTY_DIR { // link to a file
 		return errors.New(ERR_IpfsCreateIpfsDir_01)
 	} else { // link to a directory
-		lst, err := shell.List(adrs)
+		lst, err := shell.List(nsAdrs)
 		if err != nil {
 			return err
 		}
@@ -99,8 +97,7 @@ func IpfsCreateBoardDir() error {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("NEW_NS:%s\n", newhash)
-			err = shell.Publish("", newhash)
+			putIpnsAdrs(newhash)
 			if err != nil {
 				return err
 			}
@@ -110,12 +107,22 @@ func IpfsCreateBoardDir() error {
 	return nil
 }
 
-func getIpnsAddr() (string, error) {
-	adrs, err := shell.Resolve(myid)
-	if err != nil {
-		return "", err
+func getIpnsAdrs() error {
+	var err error
+	if nsAdrs, err = shell.Resolve(myid); err != nil {
+		return err
 	}
-	return adrs, nil
+	fmt.Printf("%s\n", nsAdrs)
+	return nil
+}
+
+func putIpnsAdrs(adrs string) error {
+	if err := shell.Publish("", adrs); err != nil {
+		return err
+	}
+	nsAdrs = adrs
+	fmt.Printf("New Ipns Address is :%s", adrs)
+	return nil
 }
 
 var ERR_IpfsWriteToBoard_01 = "01" // dir for boards is not created yet
@@ -132,12 +139,8 @@ func IpfsWriteToBoard(data string, n string) error {
 		return err
 	}
 	fmt.Printf("BoardHash : %s\n", hash)
-	nsadrs, err := getIpnsAddr()
-	if err != nil {
-		return err
-	}
 	// boarddir
-	obj, err := shell.ObjectGet(nsadrs + "/" + DIR_IPFS_BOARD)
+	obj, err := shell.ObjectGet(nsAdrs + "/" + DIR_IPFS_BOARD)
 	if err != nil {
 		if err.Error()[0:6] == "no link" {
 			return errors.New(ERR_IpfsWriteToBoard_01)
@@ -152,7 +155,7 @@ func IpfsWriteToBoard(data string, n string) error {
 	fmt.Printf("NewHash for boardforalterorg : %s\n", hash)
 
 	// ipnsdir
-	nsobj, err := shell.ObjectGet(nsadrs)
+	nsobj, err := shell.ObjectGet(nsAdrs)
 	if err != nil {
 		return err
 	}
@@ -170,11 +173,8 @@ func IpfsWriteToBoard(data string, n string) error {
 		return errors.New(ERR_IpfsWriteToBoard_02)
 	}
 	nwnshash, err := shell.ObjectPut(nsobj)
-	fmt.Printf("New Ns Hash including new boarddir:%s\n", nwnshash)
-	// TODO:implements a process for async after implementing "wait" option to IPFS
-	err = shell.Publish("", nwnshash)
+	err = putIpnsAdrs(nwnshash)
 	if err != nil {
-		fmt.Printf("14\n")
 		return err
 	}
 
