@@ -3,30 +3,112 @@
 package cli
 
 import (
+	"../cmn"
 	"errors"
-	"fmt"
 	ipfs "github.com/ipfs/go-ipfs-api"
 	pb "github.com/ipfs/go-ipfs/unixfs/pb"
 	proto "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"
 	"io"
 	"os"
+	"os/exec"
+	"syscall"
+	"time"
 )
 
-type ErrCodeIpfs string
+const (
+	STTS_IPFS_NOT_START       Status = 0
+	STTS_IPFS_INITIALIZING    Status = 10010
+	STTS_IPFS_STARTING        Status = 10020
+	STTS_IPFS_GETTING_SYSINFO Status = 10030
+	STTS_IPFS_RESOLVING_NAME  Status = 10040
+	STTS_IPFS_STARTED         Status = 11000
+	STTS_IPFS_FAILED          Status = 19999
+)
 
+var s_Ipfs Status
 var ipfsurl string
 var shell *ipfs.Shell
 var myid string
 var nsAdrs string
+var ipfsCmd *exec.Cmd
 
-func makeError(msg ErrCodeIpfs) error {
-	return errors.New(string(msg))
+func logIpfs(txt string, args ...interface{}) {
+	cmn.Log(LBL_IPFS, txt, args...)
 }
 
-func IsEqualErr(err error, tp ErrCodeIpfs) bool {
-	return err.Error() == string(tp)
+func GetIpfsStatus() Status {
+	return s_Ipfs
 }
 
+func StartIpfs() {
+	s_Ipfs = STTS_IPFS_NOT_START
+	go func() {
+		if cmn.SysEnv.IpfsRun != 0 {
+			const (
+				NOREPO string = "Error: no ipfs repo found"
+			)
+			out, err := exec.Command(cmn.SysEnv.IpfsCmd, "diag", "net").CombinedOutput()
+			if err != nil {
+				if string(out[0:25]) == NOREPO {
+					s_Ipfs = STTS_IPFS_INITIALIZING
+					logIpfs("IPFS is not initialized.\nNow initializing...")
+					out, err = exec.Command(cmn.SysEnv.IpfsCmd, "init").Output()
+					if err != nil {
+						s_Ipfs = STTS_IPFS_FAILED
+						logIpfs("Failed to execute ipfs init:%s", err.Error())
+						return
+					}
+					logIpfs("Initialize IPFS:%s", out)
+				} else {
+					// It's OK because ipfs daemon is not run
+				}
+			}
+
+			s_Ipfs = STTS_IPFS_STARTING
+			logIpfs("Starting IPFS...")
+			prm := splitArgs(cmn.SysEnv.IpfsPrm)
+			ipfsCmd = exec.Command(cmn.SysEnv.IpfsCmd, prm...)
+			if err = ipfsCmd.Start(); err != nil {
+				s_Ipfs = STTS_IPFS_FAILED
+				logIpfs("error in ipfs daemon:%s", err.Error())
+				return
+			}
+		}
+		time.Sleep(5 * time.Second)
+		s_Ipfs = STTS_IPFS_GETTING_SYSINFO
+		logIpfs("Getting information from IPFS....")
+		shell = ipfs.NewShell(cmn.SysEnv.IpfsUrl)
+		out, err := shell.ID()
+		if err != nil {
+			logIpfs("error in shell.ID:%s", err.Error())
+			TermIpfs(STTS_IPFS_FAILED)
+			return
+		}
+		s_Ipfs = STTS_IPFS_RESOLVING_NAME
+		logIpfs("Getting my ipns address")
+		myid = out.ID
+		getIpnsAdrs()
+		s_Ipfs = STTS_IPFS_STARTED
+	}()
+}
+
+func TermIpfs(stts Status) {
+	logIpfs("Terminationg Ipfs...")
+	if ipfsCmd != nil {
+		ipfsCmd.Process.Signal(syscall.SIGINT)
+		ipfsCmd = nil
+	}
+	s_Ipfs = stts
+}
+
+func chkStat() error {
+	if s_Ipfs != STTS_IPFS_STARTED {
+		return errors.New("Ipfs is not started")
+	}
+	return nil
+}
+
+/*
 func InitIpfs(url string) error {
 	ipfsurl = url
 	shell = ipfs.NewShell(ipfsurl)
@@ -37,9 +119,25 @@ func InitIpfs(url string) error {
 	myid = out.ID
 	getIpnsAdrs()
 	return nil
+}*/
+func IpfsGet(hash, path string) error {
+	if err := chkStat(); err != nil {
+		return err
+	}
+	return shell.Get(hash, path)
+}
+
+func IpfsBlockGet(hash string) ([]byte, error) {
+	if err := chkStat(); err != nil {
+		return nil, err
+	}
+	return shell.BlockGet(hash)
 }
 
 func IpfsAddFile(path string) (string, error) {
+	if err := chkStat(); err != nil {
+		return "", err
+	}
 	file, err := os.Open(path)
 	if err != nil {
 		return "", err
@@ -48,6 +146,9 @@ func IpfsAddFile(path string) (string, error) {
 }
 
 func IpfsAdd(reader io.Reader) (string, error) {
+	if err := chkStat(); err != nil {
+		return "", err
+	}
 	hash, err := shell.Add(reader)
 	if err != nil {
 		return "", err
@@ -61,11 +162,14 @@ var hASH_EMPTY_FILE = "QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"
 var hASH_EMPTY_DIR = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
 
 const (
-	ERR_IpfsCreateIpfsDir_01 ErrCodeIpfs = "01" // ipns link is created as a file
-	ERR_IpfsCreateIpfsDir_02 ErrCodeIpfs = "02" // dir which is used for boards of alterorg is created as a file
+	ERR_IpfsCreateIpfsDir_01 ErrCode = "01" // ipns link is created as a file
+	ERR_IpfsCreateIpfsDir_02 ErrCode = "02" // dir which is used for boards of alterorg is created as a file
 )
 
 func IpfsCreateBoardDir() error {
+	if err := chkStat(); err != nil {
+		return err
+	}
 	obj, err := shell.ObjectGet(nsAdrs)
 	if err != nil {
 		return err
@@ -104,35 +208,43 @@ func IpfsCreateBoardDir() error {
 				return err
 			}
 		}
-		fmt.Printf("Dir5\n")
 	}
 	return nil
 }
 
 func getIpnsAdrs() error {
+	if err := chkStat(); err != nil {
+		return err
+	}
 	var err error
 	if nsAdrs, err = shell.Resolve(myid); err != nil {
 		return err
 	}
-	fmt.Printf("%s\n", nsAdrs)
+	logIpfs("IPNS:%s", nsAdrs)
 	return nil
 }
 
 func putIpnsAdrs(adrs string) error {
+	if err := chkStat(); err != nil {
+		return err
+	}
 	if err := shell.Publish("", adrs); err != nil {
 		return err
 	}
 	nsAdrs = adrs
-	fmt.Printf("New Ipns Address is :%s", adrs)
+	logIpfs("New Ipns Address is :%s", adrs)
 	return nil
 }
 
 const (
-	ERR_IpfsWriteToBoard_01 ErrCodeIpfs = "01" // dir for boards is not created yet
-	ERR_IpfsWriteToBoard_02 ErrCodeIpfs = "02" // failed to get dir for boards
+	ERR_IpfsWriteToBoard_01 ErrCode = "01" // dir for boards is not created yet
+	ERR_IpfsWriteToBoard_02 ErrCode = "02" // failed to get dir for boards
 )
 
 func IpfsWriteToBoard(data string, n string) error {
+	if err := chkStat(); err != nil {
+		return err
+	}
 	size := uint64(len(data))
 	buf, err := proto.Marshal(&pb.Data{Type: pb.Data_File.Enum(), Data: []byte(data), Filesize: &size})
 	if err != nil {
@@ -143,7 +255,7 @@ func IpfsWriteToBoard(data string, n string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("BoardHash : %s\n", hash)
+	logIpfs("BoardHash : %s", hash)
 	// boarddir
 	obj, err := shell.ObjectGet(nsAdrs + "/" + DIR_IPFS_BOARD)
 	if err != nil {
@@ -157,7 +269,7 @@ func IpfsWriteToBoard(data string, n string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf("NewHash for boardforalterorg : %s\n", hash)
+	logIpfs("NewHash for boardforalterorg : %s", hash)
 
 	// ipnsdir
 	nsobj, err := shell.ObjectGet(nsAdrs)

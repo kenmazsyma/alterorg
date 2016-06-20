@@ -97,7 +97,7 @@ func (self *Alterorg) GetData(hash string, rslt *string) error {
 }
 
 // return system status
-func (self *Alterorg) GetStatus(prm string, rslt *string) error {
+/*func (self *Alterorg) GetStatus(prm string, rslt *string) error {
 	switch {
 	case cmn.EthState == cmn.RUN && cmn.IpfsState == cmn.RUN:
 		*rslt = "RUN"
@@ -107,7 +107,7 @@ func (self *Alterorg) GetStatus(prm string, rslt *string) error {
 		*rslt = "INIT"
 	}
 	return nil
-}
+}*/
 
 func (self *Alterorg) QueryAssemblyLst(prm string, rslt *[]string) error {
 	var er error

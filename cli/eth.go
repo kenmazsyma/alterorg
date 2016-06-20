@@ -3,9 +3,15 @@
 package cli
 
 import (
+	"../cmn"
 	"./abi"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"os/exec"
+	"strings"
+	"syscall"
+	"time"
 )
 
 var baseurl string
@@ -46,6 +52,7 @@ type ResTransactionReceipt struct {
 	LOG []ResEventLog `json:"logs"`
 }
 
+/*
 func InitEth(url string) error {
 	baseurl = url
 	//	err := getCoinbase()
@@ -53,28 +60,104 @@ func InitEth(url string) error {
 	//		return err
 	//	}
 	return nil
+}*/
+
+var s_Eth Status
+
+const (
+	STTS_ETH_NOT_START        Status = 0
+	STTS_ETH_WAIT_STARTING    Status = 20010
+	STTS_ETH_WAIT_LISTENER    Status = 20020
+	STTS_ETH_GETTING_COINBASE Status = 20030
+	STTS_ETH_STARTED          Status = 21000
+	STTS_ETH_FAILED           Status = 29999
+)
+
+var ethCmd *exec.Cmd
+
+func logEth(txt string, args ...interface{}) {
+	cmn.Log(LBL_ETH, txt, args...)
 }
 
-func GetCoinbase() error {
+func StartEth() {
+	s_Eth = STTS_ETH_NOT_START
+	go func() {
+		if cmn.SysEnv.EthRun != 0 {
+			s_Eth = STTS_ETH_WAIT_STARTING
+			prm := splitArgs(cmn.SysEnv.EthPrm)
+			logEth("EthPrm:%s", strings.Join(prm, ":::"))
+			ethCmd = exec.Command(cmn.SysEnv.EthCmd, prm...)
+			ethCmd.Stdout = os.Stdout
+			//ethCmd.Stdin = &ethInput
+			if err := ethCmd.Start(); err != nil {
+				logEth("Failed to start ethereum : %s", err.Error())
+				s_Eth = STTS_ETH_FAILED
+				return
+			}
+		}
+		baseurl = cmn.SysEnv.EthUrl
+		s_Eth = STTS_ETH_WAIT_LISTENER
+		for i := 0; i < 10; i++ {
+			time.Sleep(2 * time.Second)
+			start, err := getEthListening()
+			if err != nil {
+				logEth("Waiting listener : %d", i+1)
+			} else {
+				if start {
+					// TODO:now searching a way of getting unlock timing
+					// if delete below sleep, "account is locked" error occurs
+					// because unlock proc in geth is not called yet at this timing.
+					time.Sleep(2 * time.Second)
+					s_Eth = STTS_ETH_GETTING_COINBASE
+					break
+				}
+			}
+		}
+		if s_Eth != STTS_ETH_GETTING_COINBASE {
+			logEth("Failed to start listner for ehtereum")
+			TermEth(STTS_ETH_FAILED)
+			return
+		}
+		if err := getCoinbase(); err != nil {
+			logEth("Failed to get coinbase : %s", err.Error())
+			TermEth(STTS_ETH_FAILED)
+			return
+		}
+		s_Eth = STTS_ETH_STARTED
+	}()
+}
+
+func TermEth(stts Status) {
+	logEth("Terminating ethereum...")
+	if ethCmd != nil {
+		ethCmd.Process.Signal(syscall.SIGINT)
+		ethCmd = nil
+	}
+	s_Eth = stts
+}
+
+func GetEthStatus() Status {
+	return s_Ipfs
+}
+
+func getCoinbase() error {
 	arg := []Unknown{""}
-	fmt.Printf("getcoinbase::::%s\n", baseurl)
 	if er := Request(baseurl, "eth_coinbase", arg, &Coinbase); er != nil {
-		fmt.Printf("\ngetCoinbase:%s\n", er.Error())
+		logEth("getCoinbase:%s", er.Error())
 		return er
 	}
-	fmt.Printf("coinbase:%s\n", Coinbase)
+	logEth("coinbase:%s", Coinbase)
 	return nil
 }
 
-func GetEthListening() (bool, error) {
+func getEthListening() (bool, error) {
 	arg := []Unknown{""}
 	var ret bool
-	fmt.Printf("GetEthListening::::%s\n", baseurl)
 	if er := Request(baseurl, "net_listening", arg, &ret); er != nil {
-		fmt.Printf("\nGetEthListening:%s\n", er.Error())
+		logEth("GetEthListening:%s", er.Error())
 		return false, er
 	}
-	fmt.Printf("ret:%d", ret)
+	logEth("ret:%d", ret)
 	return true, nil
 }
 
@@ -84,7 +167,7 @@ func NewContract(code string, ab abi.ABI, param ...interface{}) (string, error) 
 		return "", er
 	}
 	encst := hex.EncodeToString(enc)
-	fmt.Printf("!!!code:%s\n", encst)
+	logEth("!!!code:%s", encst)
 	// TODO:set correct GAS value
 	arg := []Unknown{argNewContract{From: Coinbase, Data: code + encst, Gas: 2000000}}
 	var address string
@@ -109,33 +192,33 @@ func Send(to string, name string, ab abi.ABI, param ...interface{}) (string, err
 		return "", er
 	}
 	encst := hex.EncodeToString(enc)
-	fmt.Printf("Send:%s\n", name)
-	fmt.Printf("Coinbase:%s\n", Coinbase)
+	logEth("Send:%s", name)
+	logEth("Coinbase:%s", Coinbase)
 	// TODO:set correct Gas value
 	arg := []Unknown{argCall{From: Coinbase, To: to, Data: "0x" + encst, Gas: 2000000}}
 	var data string
 	if er := Request(baseurl, "eth_sendTransaction", arg, &data); er != nil {
 		return "", er
 	}
-	fmt.Printf("Send2:%s\n", data)
+	logEth("Send2:%s", data)
 	return data, nil
 }
 
 func Call(to string, ret interface{}, name string, ab abi.ABI, param ...interface{}) error {
 	enc, er := ab.Pack(name, param...)
 	if er != nil {
-		fmt.Printf("Check point1\n")
+		logEth("Check point1")
 		return er
 	}
 	encst := hex.EncodeToString(enc)
-	fmt.Printf("Call:%s\n", name)
+	logEth("Call:%s", name)
 	// TODO:set right Gas value
 	arg := []Unknown{argCall{From: Coinbase, To: to, Data: "0x" + encst, Gas: 20000000}, "latest"}
 	var data string
 	if er := Request(baseurl, "eth_call", arg, &data); er != nil {
 		return er
 	}
-	fmt.Print("11111:" + data + "\n")
+	logEth("11111:%s", data)
 	bdata, er := hex.DecodeString(data[2:])
 	if er != nil {
 		return er
@@ -151,7 +234,7 @@ func Sha3(param string) (string, error) {
 	arg := []Unknown{param}
 	var data string
 	if er := Request(baseurl, "web3_sha3", arg, &data); er != nil {
-		fmt.Print(er.Error())
+		logEth(er.Error())
 		return "", er
 	}
 	return data, nil
