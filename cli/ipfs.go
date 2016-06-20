@@ -87,7 +87,11 @@ func StartIpfs() {
 		s_Ipfs = STTS_IPFS_RESOLVING_NAME
 		logIpfs("Getting my ipns address")
 		myid = out.ID
-		getIpnsAdrs()
+		if err := getIpnsAdrs(); err != nil {
+			logIpfs("Failed to get IPNS address:%s", err.Error())
+			TermIpfs(STTS_IPFS_FAILED)
+			return
+		}
 		s_Ipfs = STTS_IPFS_STARTED
 	}()
 }
@@ -102,7 +106,7 @@ func TermIpfs(stts Status) {
 }
 
 func chkStat() error {
-	if s_Ipfs != STTS_IPFS_STARTED {
+	if s_Ipfs != STTS_IPFS_STARTED && s_Ipfs != STTS_IPFS_RESOLVING_NAME {
 		return errors.New("Ipfs is not started")
 	}
 	return nil

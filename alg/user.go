@@ -62,13 +62,16 @@ const (
 	STTS_USER_FAILED     Status = 19999
 )
 
-var s_User chan Status
+func logUser(txt string, args ...interface{}) {
+	cmn.Log("user", txt, args...)
+}
+
+var s_User Status
 
 func UserMap_Prepare() {
-	s_User = make(chan Status, STTS_USER_NOT_GET)
 	go func() {
-		s_User <- STTS_USER_WAIT_ETH
-		fmt.Println("Wainting Ethereum & IPFS")
+		s_User = STTS_USER_WAIT_ETH
+		logUser("Wainting Ethereum & IPFS")
 		for true {
 			time.Sleep(1 * time.Second)
 			if cli.GetIpfsStatus() != cli.STTS_IPFS_STARTED {
@@ -77,16 +80,17 @@ func UserMap_Prepare() {
 			if cli.GetEthStatus() != cli.STTS_ETH_STARTED {
 				continue
 			}
+			logUser("Confirmed IPFS & Ethereum started")
 			break
 		}
-		s_User <- STTS_USER_GETTING
+		s_User = STTS_USER_GETTING
 		UsrLst, err := UserMap_GetUsrs(cmn.ApEnv.UsrMap)
 		if err != nil {
-			fmt.Printf("Failed to get UserList:%s\n", err.Error())
-			s_User <- STTS_USER_FAILED
+			logUser("Failed to get UserList:%s", err.Error())
+			s_User = STTS_USER_FAILED
 			return
 		}
-		fmt.Printf("AddressList:%s\n", strings.Join(UsrLst, "\n"))
+		logUser("AddressList:%s", strings.Join(UsrLst, "\n"))
 		mined := false
 		for _, adrs := range UsrLst {
 			if adrs == cli.Coinbase {
@@ -94,12 +98,12 @@ func UserMap_Prepare() {
 			}
 		}
 		if !mined {
-			s_User <- STTS_USER_WAIT_REG
+			s_User = STTS_USER_WAIT_REG
 			// TODO:change to correct value
 			tx, err := UserMap_Reg(cmn.ApEnv.UsrMap, "0xaAaAfFfzfz", "for test")
 			if err != nil {
-				fmt.Printf("Failed to regist my coount to UsrList:%s\n", err.Error())
-				s_User <- STTS_USER_FAILED
+				logUser("Failed to regist my coount to UsrList:%s", err.Error())
+				s_User = STTS_USER_FAILED
 				return
 			}
 			UsrLst = append(UsrLst, cli.Coinbase)
@@ -107,20 +111,21 @@ func UserMap_Prepare() {
 			for !mined {
 				adrs, cont, isnew, err := UserMap_CheckReg(tx)
 				if adrs != "" {
-					fmt.Printf("I was mined!:%s:%s:%s\n", adrs, cont, isnew)
+					logUser("I was mined!:%s:%s:%s", adrs, cont, isnew)
 					mined = true
-					s_User <- STTS_USER_REGISTERED
+					s_User = STTS_USER_REGISTERED
 					break
 				}
 				if err != nil {
-					fmt.Printf("%s", err.Error())
-					s_User <- STTS_USER_FAILED
+					logUser("%s", err.Error())
+					s_User = STTS_USER_FAILED
 					return
 				}
 				time.Sleep(time.Second * 1)
 			}
 		}
-		s_User <- STTS_USER_REGISTERED
+		s_User = STTS_USER_REGISTERED
+		logUser("Success to get user lists")
 	}()
 
 }

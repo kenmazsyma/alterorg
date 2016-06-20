@@ -137,7 +137,7 @@ func TermEth(stts Status) {
 }
 
 func GetEthStatus() Status {
-	return s_Ipfs
+	return s_Eth
 }
 
 func getCoinbase() error {
