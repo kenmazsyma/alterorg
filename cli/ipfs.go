@@ -5,10 +5,12 @@ package cli
 import (
 	"../cmn"
 	"errors"
+	"fmt"
 	ipfs "github.com/ipfs/go-ipfs-api"
 	pb "github.com/ipfs/go-ipfs/unixfs/pb"
 	proto "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
@@ -93,6 +95,11 @@ func StartIpfs() {
 			return
 		}
 		s_Ipfs = STTS_IPFS_STARTED
+		if err := IpfsCreateBoardDir(); err != nil {
+			logIpfs("Failed to create board dir:%s", err.Error())
+			TermIpfs(STTS_IPFS_FAILED)
+			return
+		}
 	}()
 }
 
@@ -297,4 +304,25 @@ func IpfsWriteToBoard(data string, n string) error {
 		return err
 	}
 	return nil
+}
+
+func IpfsListBoard() ([][]string, error) {
+	ret := [][]string{}
+	if err := chkStat(); err != nil {
+		return nil, err
+	}
+	list, err := shell.List(nsAdrs + "/" + DIR_IPFS_BOARD)
+	if err != nil {
+		return nil, err
+	}
+	for _, lnk := range list {
+		rc, err := shell.Cat(lnk.Hash)
+		if err != nil {
+			fmt.Printf(":%s(Hash:%s)\n", err.Error(), lnk.Hash)
+			continue
+		}
+		buf, err := ioutil.ReadAll(rc)
+		ret = append(ret, []string{lnk.Name, string(buf)})
+	}
+	return ret, nil
 }

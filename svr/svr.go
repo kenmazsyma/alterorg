@@ -38,13 +38,11 @@ const (
 )
 
 func main() {
-	err := cmn.LoadSysEnv(env_filename)
-	if err != nil {
+	if err := cmn.LoadSysEnv(env_filename); err != nil {
 		fmt.Printf("error occured when loading sysenv file\n%s\n", err.Error())
 		return
 	}
-	err = cmn.LoadApEnv(cmn.SysEnv.ApEnvPath)
-	if err != nil {
+	if err := cmn.LoadApEnv(cmn.SysEnv.ApEnvPath); err != nil {
 		fmt.Printf("error occured when loading apenv file\n%s\n", err.Error())
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"../cli"
 	"../cmn"
 	//"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -97,17 +98,19 @@ func (self *Alterorg) GetData(hash string, rslt *string) error {
 }
 
 // return system status
-/*func (self *Alterorg) GetStatus(prm string, rslt *string) error {
+func (self *Alterorg) GetStatus(prm string, rslt *string) error {
+	s_eth := cli.GetEthStatus()
+	s_ipfs := cli.GetIpfsStatus()
 	switch {
-	case cmn.EthState == cmn.RUN && cmn.IpfsState == cmn.RUN:
+	case s_eth == cli.STTS_ETH_STARTED && s_ipfs == cli.STTS_IPFS_STARTED:
 		*rslt = "RUN"
-	case cmn.EthState == cmn.ERROR || cmn.IpfsState == cmn.ERROR:
+	case s_eth == cli.STTS_ETH_FAILED || s_ipfs == cli.STTS_IPFS_FAILED:
 		*rslt = "ERROR"
 	default:
 		*rslt = "INIT"
 	}
 	return nil
-}*/
+}
 
 func (self *Alterorg) QueryAssemblyLst(prm string, rslt *[]string) error {
 	var er error
@@ -129,6 +132,24 @@ func (self *Alterorg) UpdateAssemblyLst(prm []string, rslt *string) error {
 	er = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
 	if er != nil {
 		return er
+	}
+	return nil
+}
+
+func (self *Alterorg) WriteToBoard(prm []string, rslt *string) error {
+	fmt.Printf("[Alterorg]%s, %s", prm[0], prm[1])
+
+	if len(prm) != 2 {
+		return errors.New("Invalid parameters")
+	}
+	return cli.IpfsWriteToBoard(prm[0], prm[1])
+}
+
+func (self *Alterorg) ListBoard(prm []string, rslt *[][]string) error {
+	var err error
+	*rslt, err = cli.IpfsListBoard()
+	if err != nil {
+		return err
 	}
 	return nil
 }

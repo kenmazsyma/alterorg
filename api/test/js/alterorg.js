@@ -86,5 +86,62 @@ Vw = {
 			Vw.home();
 		});
 		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Create'}]);
+	},
+	board : function() {
+		var fm = ''
+		 + '<h1>Board Test</h1>'
+		 + '<div class="form-group">'
+		 + '<label>list</label>'
+		 + '<div id="list">'
+		 + '</div>'
+		 + '</div>'
+		 + '<div class="form-group">'
+		 + '<label>Content</label>'
+		 + '<textarea id="content" class="form-control" rows=10 side="30"></textarea>'
+		 + '<ul class="list-inline">'
+		 + '<li><button class="btn btn-primary" id="btn_wri">Write</button></li>'
+		 + '</ul>'
+		 + '</div>'
+		 + '</ul>';
+		$('#main').html(fm);
+		$('#btn_wri').click(function() {
+			Board.write($('#content').val());
+		});
+		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Board'}]);
+		Board.init();
+	}
+};
+
+Board = {
+	last : 1,
+	init : function() {
+		window.setInterval(Board.draw,10000);
+	},
+	draw : function() {
+		rpccall('Alterorg.ListBoard', [], function(res) {
+			var ret = '';
+			var idx = 0;
+			for (var i=0; i<res.result.length; i++) {
+				ret += '<div>' + res.result[i][1] + '</div>';
+				idx = parseInt(res.result[i][0]);
+				Board.last = (Board.last>idx) ? Board.last : idx;
+			}
+			$('#list').html(ret);
+		}
+		)
+	},
+	write : function (txt) {
+		rpccall('Alterorg.WriteToBoard', [[txt, (Board.last+1).toString()]], function(res) {
+			Board.draw();
+		},
+		function(res, stat, err) {
+			Board.draw();
+			alert(err.message);
+		},
+		function() {
+			alert('failed');
+		}
+		)
 	}
 }
+
