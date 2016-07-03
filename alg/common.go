@@ -7,6 +7,10 @@ import (
 	"strconv"
 )
 
+const (
+	LBL_ASSEMBLY string = "assembly"
+)
+
 // TODO:merge with cli/eth.go
 type decodeproc func(string, uint) (string, uint, error)
 

@@ -218,7 +218,7 @@ func Call(to string, ret interface{}, name string, ab abi.ABI, param ...interfac
 	if er := Request(baseurl, "eth_call", arg, &data); er != nil {
 		return er
 	}
-	logEth("11111:%s", data)
+	logEth("Received Value[%s]:%s", name, data)
 	bdata, er := hex.DecodeString(data[2:])
 	if er != nil {
 		return er

@@ -27,11 +27,11 @@ func NewAlterorg() *Alterorg {
 }
 
 func (self *Alterorg) QuerySetting(name []string, rslt *[]string) error {
-	var er error
-	*rslt, er = cmn.QuerySysEnv(name)
-	if er != nil {
-		fmt.Print(er.Error())
-		return er
+	var err error
+	*rslt, err = cmn.QuerySysEnv(name)
+	if err != nil {
+		fmt.Print(err.Error())
+		return err
 	}
 	return nil
 }
@@ -39,16 +39,16 @@ func (self *Alterorg) QuerySetting(name []string, rslt *[]string) error {
 func (self *Alterorg) UpdateSetting(val []ArgUpdSet, rslt *bool) error {
 	*rslt = false
 	for i := range val {
-		er := cmn.UpdateSysEnv(val[i].Key, val[i].Val)
-		if er != nil {
-			fmt.Print(er.Error())
-			return er
+		err := cmn.UpdateSysEnv(val[i].Key, val[i].Val)
+		if err != nil {
+			fmt.Print(err.Error())
+			return err
 		}
 	}
-	er := cmn.SaveSysEnv("alterorg.json")
-	if er != nil {
-		fmt.Print(er.Error())
-		return er
+	err := cmn.SaveSysEnv("alterorg.json")
+	if err != nil {
+		fmt.Print(err.Error())
+		return err
 	}
 	*rslt = true
 	return nil
@@ -56,55 +56,65 @@ func (self *Alterorg) UpdateSetting(val []ArgUpdSet, rslt *bool) error {
 
 // register file to IPFS
 func (self *Alterorg) SaveFile(path string, rslt *string) error {
-	var er error
-	*rslt, er = cli.IpfsAddFile(path)
-	if er != nil {
-		fmt.Printf("SaveFile:%s\n", er.Error())
-		return er
+	var err error
+	*rslt, err = cli.IpfsAddFile(path)
+	if err != nil {
+		fmt.Printf("SaveFile:%s\n", err.Error())
+		return err
 	}
 	return nil
 }
 
 // register file to IPFS
 func (self *Alterorg) SaveData(data string, rslt *string) error {
-	var er error
+	var err error
 	reader := strings.NewReader(data)
-	*rslt, er = cli.IpfsAdd(reader)
-	if er != nil {
-		fmt.Printf("SaveData:%s\n", er.Error())
-		return er
+	*rslt, err = cli.IpfsAdd(reader)
+	if err != nil {
+		fmt.Printf("SaveData:%s\n", err.Error())
+		return err
 	}
 	return nil
 }
 
 func (self *Alterorg) GetFile(arg ArgGetFile, rslt *string) error {
-	var er error
-	er = cli.IpfsGet(arg.Hash, arg.Path)
-	if er != nil {
-		fmt.Printf("GetData:%s\n", er.Error())
-		return er
+	var err error
+	err = cli.IpfsGet(arg.Hash, arg.Path)
+	if err != nil {
+		fmt.Printf("GetData:%s\n", err.Error())
+		return err
 	}
 	return nil
 }
 
 func (self *Alterorg) GetData(hash string, rslt *string) error {
-	data, er := cli.IpfsBlockGet(hash)
-	if er != nil {
-		fmt.Printf("GetData:%s\n", er.Error())
-		return er
+	data, err := cli.IpfsBlockGet(hash)
+	if err != nil {
+		fmt.Printf("GetData:%s\n", err.Error())
+		return err
 	}
 	*rslt = string(data)
 	return nil
 }
 
-// return system status
-func (self *Alterorg) GetStatus(prm string, rslt *string) error {
-	s_eth := cli.GetEthStatus()
-	s_ipfs := cli.GetIpfsStatus()
+func (self *Alterorg) GetEthStatus(prm string, rslt *string) error {
+	stts := cli.GetEthStatus()
 	switch {
-	case s_eth == cli.STTS_ETH_STARTED && s_ipfs == cli.STTS_IPFS_STARTED:
+	case stts == cli.STTS_ETH_STARTED:
 		*rslt = "RUN"
-	case s_eth == cli.STTS_ETH_FAILED || s_ipfs == cli.STTS_IPFS_FAILED:
+	case stts == cli.STTS_ETH_FAILED:
+		*rslt = "ERROR"
+	default:
+		*rslt = "INIT"
+	}
+	return nil
+}
+func (self *Alterorg) GetIpfsStatus(prm string, rslt *string) error {
+	stts := cli.GetIpfsStatus()
+	switch {
+	case stts == cli.STTS_IPFS_STARTED:
+		*rslt = "RUN"
+	case stts == cli.STTS_IPFS_FAILED:
 		*rslt = "ERROR"
 	default:
 		*rslt = "INIT"
@@ -113,25 +123,42 @@ func (self *Alterorg) GetStatus(prm string, rslt *string) error {
 }
 
 func (self *Alterorg) QueryAssemblyLst(prm string, rslt *[]string) error {
-	var er error
-	*rslt, er = cmn.QueryAssemblyList()
-	if er != nil {
-		return er
+	var err error
+	*rslt, err = cmn.QueryAssemblyList()
+	if err != nil {
+		return err
 	}
 	return nil
 }
 
 // TODO:support an orgs isn't mined yet(save the tx hash)
 func (self *Alterorg) UpdateAssemblyLst(prm []string, rslt *string) error {
-	var er error
+	var err error
 	fmt.Printf("UpdateAssemblyLst\n")
-	er = cmn.UpdateAssemblyList(prm)
-	if er != nil {
-		return er
+	err = cmn.UpdateAssemblyList(prm)
+	if err != nil {
+		return err
 	}
-	er = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
-	if er != nil {
-		return er
+	err = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (selct *Alterorg) AppendAssembly(adrs string, rslt *string) error {
+	lst, err := cmn.QueryAssemblyList()
+	if err != nil {
+		return err
+	}
+	lst = append(lst, adrs)
+	err = cmn.UpdateAssemblyList(lst)
+	if err != nil {
+		return err
+	}
+	err = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
+	if err != nil {
+		return err
 	}
 	return nil
 }

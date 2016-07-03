@@ -57,7 +57,7 @@ Vw = {
 		 + '<h1>Create new assembly</h1>'
 		 + '<div class="form-group">'
 		 + '<label>name</label>'
-		 + '<input type="text" name="oname" class="form-control" side="30">'
+		 + '<input type="text" id="oname" class="form-control" side="30">'
 		 + '</div>'
 		 + '<input id="sel_fl" type="file" style="display:none">'
 		 + '<label>proposal</label>'
@@ -80,12 +80,50 @@ Vw = {
 			$('#sel_fl').click();
 		});
 		$('#btn_cre').click(function() {
-			alert('create');
+			var asm = new Assembly()
+			asm.new($('#oname').val())
 		});
 		$('#btn_can').click(function() {
 			Vw.home();
 		});
-		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Create'}]);
+		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Create new assembly'}]);
+	},
+	detailAssembly : function(address) {
+		var _this = this;
+		var fm = ''
+		 + '<h1>Assembly Detail</h1>'
+		 + '<div class="form-group">'
+		 + '<label>name</label>'
+		 + '<span id="oname"></span>&nbsp;(&nbsp;'
+		 + address
+		 + '&nbsp;)&nbsp;<br>'
+		 + '<label>proposal</label>'
+		 + '<a href="#" id="proposal"></a>'
+		 + '<label>last arbiter</label>'
+		 + '<a href="#" id="arbiter"></a><br>'
+		 + '<label>version</label>'
+		 + '<a href="#" id="version"></a>'
+		 + '</div>'
+		 + '<br>'
+		 + '<ul class="list-inline">'
+		 + '<li><button class="btn btn-primary" id="btn_board">Board</button></li>'
+		 + '<li><button class="btn btn-primary" id="btn_close">Close</button></li>'
+		 + '</ul>';
+		$('#main').html(fm);
+		$('#btn_board').click(function() {
+		});
+		$('#btn_close').click(function() {
+		});
+		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Assembly detail'}]);
+		rpccall('Assembly.GetBasicInfo', [address], function(res) {
+			$('#oname').html(res.result.name);
+			$('#arbiter').html(res.result.arbiter);
+			$('#version').html(res.result.version);
+		},
+		function(res, stat, err) {
+			alert(err.message)
+		});
+	
 	},
 	board : function() {
 		var fm = ''
@@ -112,10 +150,83 @@ Vw = {
 	}
 };
 
+
+function Assembly(address) {
+	this.address = address;
+}
+
+Assembly.prototype.new = function(name) {
+	var _this = this;
+	rpccall('Assembly.Create', [name], function(res) {
+		var intervalId;
+		intervalId = window.setInterval(function() {
+			rpccall('Assembly.CheckMine', [res.result], function(res2) {
+				if (res2.result!="") {
+					_this.address = res2.result;
+					rpccall('Alterorg.AppendAssembly', [res2.result], function(res3) {
+						user.getAssemblyList();
+						window.clearInterval(intervalId);
+					});
+				}
+			},
+			function(res, stat, err) {
+				alert(err.message)
+				window.clearInterval(intervalId);
+			})
+		}, 1000);
+	}
+	)
+}
+
+function User() {
+	this.orgLst = {};
+}
+
+User.prototype.getAssemblyList = function() {
+	var _this = this;
+	rpccall(
+		'Alterorg.QueryAssemblyLst',
+		[],
+		function(res){
+			_this.orgLst = {};
+			for (var i in res.result ) {
+				_this.orgLst[res.result[i]] = {}
+			}
+			_this.draw();
+		},
+		function(req, stat,err) {
+			outputLog(err.message);
+		}
+	);
+}
+
+User.prototype.draw = function() {
+	$('#orglist').html('');
+	var code = '';
+	for ( var i in this.orgLst ) {
+		code += '<li role="presentation">'
+			  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.detailAssembly('
+			  + "'" + i + "'" 
+			  + ')">'
+			  + i
+			  +'</a></li>';
+	}
+	code += '<li role="presentation">'
+		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.board()">'
+		  + 'Board test'
+		  +'</a></li>';
+	code += '<li role="presentation">'
+		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newAssembly()">'
+		  + 'Create new Assembly'
+		  +'</a></li>';
+	$('#orglist').append(code);
+}
+
+
 Board = {
 	last : 1,
 	init : function() {
-		window.setInterval(Board.draw,10000);
+		window.setTimeout(Board.draw,10000);
 	},
 	draw : function() {
 		rpccall('Alterorg.ListBoard', [], function(res) {

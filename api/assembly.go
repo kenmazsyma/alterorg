@@ -30,25 +30,43 @@ type ArgChkRevPpslRslt struct {
 	Version uint   `json:"version"`
 }
 
+type ArgGetBasicInfo struct {
+	Name     string `json:"name"`
+	Proposal string `json:"proposal"`
+	Arbiter  string `json:"arbiter"`
+	Version  string `json:"version"`
+}
+
 func NewAssembly() *Assembly {
 	return &Assembly{}
 }
 
-func (self *Assembly) Create(prm ArgPpslParam, rslt *string) error {
-	tx, e := alg.NewAssembly(prm.Proposal, prm.Discussion)
-	if e != nil {
-		fmt.Printf("%s:\n", e.Error())
-		return e
+func (self *Assembly) Create(name string, rslt *string) error {
+	tx, err := alg.NewAssembly(name)
+	if err != nil {
+		fmt.Printf("%s:\n", err.Error())
+		return err
 	}
 	*rslt = tx
 	return nil
 }
 
+func (self *Assembly) getName(address string, rslt *string) error {
+	name, err := alg.Assembly_GetName(address)
+	if err != nil {
+		fmt.Printf("%s:\n", err.Error())
+		return err
+	}
+	*rslt = name
+	return nil
+}
+
 func (self *Assembly) CheckMine(tx string, rslt *string) error {
-	adrs, e := alg.Assembly_CheckMine(tx)
-	if e != nil {
-		fmt.Printf("%s\n", e.Error())
-		return e
+	//adrs, err := alg.Assembly_CheckMine(tx)
+	adrs, err := alg.Assembly_ChkCreated(tx)
+	if err != nil {
+		fmt.Printf("%s\n", err.Error())
+		return err
 	}
 	*rslt = adrs
 	return nil
@@ -65,22 +83,32 @@ func (self *Assembly) GetProposal(adrs string, rslt *ArgPpslRslt) error {
 }
 
 func (self *Assembly) RevisionProposal(prm ArgRevPpslParam, rslt *string) error {
-	tx, e := alg.Assembly_RevisionProposal(prm.Address, prm.Proposal, prm.Discussion)
-	if e != nil {
-		fmt.Print("%s:\n", e.Error())
-		return e
+	tx, err := alg.Assembly_RevisionProposal(prm.Address, prm.Proposal, prm.Discussion)
+	if err != nil {
+		fmt.Print("%s:\n", err.Error())
+		return err
 	}
 	*rslt = tx
 	return nil
 }
 
 func (self *Assembly) CheckRevisionProposal(tx string, rslt *ArgChkRevPpslRslt) error {
-	adrs, ver, e := alg.Assembly_CheckRevision(tx)
-	if e != nil {
-		fmt.Print("%s:\n", e.Error())
-		return e
+	adrs, ver, err := alg.Assembly_CheckRevision(tx)
+	if err != nil {
+		fmt.Print("%s:\n", err.Error())
+		return err
 	}
 
 	*rslt = ArgChkRevPpslRslt{Address: adrs, Version: ver}
+	return nil
+}
+
+func (self *Assembly) GetBasicInfo(address string, rslt *ArgGetBasicInfo) error {
+	info, err := alg.Assembly_GetBasicInfo(address)
+	if err != nil {
+		fmt.Print("%s:\n", err.Error())
+		return err
+	}
+	*rslt = ArgGetBasicInfo{Name: info[0], Proposal: info[1], Arbiter: info[2], Version: info[3]}
 	return nil
 }

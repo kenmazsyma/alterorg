@@ -95,7 +95,8 @@ func save(param string, abi map[string]string, bin map[string]string) error {
 	content.WriteString("package solidity\n")
 	content.WriteString("import (\n")
 	content.WriteString(`    "bytes"` + "\n")
-	content.WriteString(`    "github.com/ethereum/go-ethereum/accounts/abi"` + "\n")
+	content.WriteString(`    "../cli/abi"` + "\n")
+	//content.WriteString(`    "github.com/ethereum/go-ethereum/accounts/abi"` + "\n")
 	content.WriteString(")\n")
 	for k, _ := range abi {
 		content.WriteString("var Abi_" + k + " abi.ABI\n")

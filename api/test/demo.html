@@ -33,58 +33,11 @@ function outputLog(msg) {
 	console.log(msg);
 }
 
-function detailAssembly(hash) {
-	alert(hash);
-}
-
-
-var orgLst = {};
-function draw() {
-	$('#orglist').html('');
-	var code = '';
-	for ( var i in orgLst ) {
-		code += '<li role="presentation">'
-			  + '<a role="menuitem" tabindex="-1" href="#" onclick="detailAssembly('
-			  + "'" + i + "'" 
-			  + ')">'
-			  + i
-			  +'</a></li>';
-	}
-	code += '<li role="presentation">'
-		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.board()">'
-		  + 'Board test'
-		  +'</a></li>';
-	code += '<li role="presentation">'
-		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newAssembly()">'
-		  + 'Create new Assembly'
-		  +'</a></li>';
-	$('#orglist').append(code);
-}
-
-
-
-
-function getAssemblyList() {
-	rpccall(
-		'Alterorg.QueryAssemblyLst',
-		[],
-		function(res){
-			orgLst = {};
-			for (var i in res.result ) {
-				orgLst[res.result[i]] = {}
-			}
-			draw();
-		},
-		function(req, stat,err) {
-			outputLog(err.message);
-		}
-	);
-}
-
 var intervalId = -1;
+var user;
 function waitInitialize() {
 	rpccall(
-		'Alterorg.GetStatus',
+		'Alterorg.GetEthStatus',
 		[],
 		function(res){
 			if (res.result!=='RUN') {
@@ -92,7 +45,8 @@ function waitInitialize() {
 			} else {
 				window.clearInterval(intervalId);
 				closeModal();
-				getAssemblyList();
+				user = new User();
+				user.getAssemblyList();
 			}
 		},
 		function(req, stat,err) {
