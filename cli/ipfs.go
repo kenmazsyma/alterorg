@@ -76,30 +76,41 @@ func StartIpfs() {
 				return
 			}
 		}
-		time.Sleep(5 * time.Second)
-		s_Ipfs = STTS_IPFS_GETTING_SYSINFO
-		logIpfs("Getting information from IPFS....")
-		shell = ipfs.NewShell(cmn.SysEnv.IpfsUrl)
-		out, err := shell.ID()
-		if err != nil {
-			logIpfs("error in shell.ID:%s", err.Error())
-			TermIpfs(STTS_IPFS_FAILED)
-			return
+		var out *ipfs.IdOutput
+		var err error
+		for true {
+			time.Sleep(1 * time.Second)
+			s_Ipfs = STTS_IPFS_GETTING_SYSINFO
+			logIpfs("Getting information from IPFS....")
+			shell = ipfs.NewShell(cmn.SysEnv.IpfsUrl)
+			out, err = shell.ID()
+			if err != nil {
+				//	logIpfs("error in shell.ID:%s", err.Error())
+				//	TermIpfs(STTS_IPFS_FAILED)
+				//	return
+				continue
+			}
+			break
 		}
-		s_Ipfs = STTS_IPFS_RESOLVING_NAME
-		logIpfs("Getting my ipns address")
-		myid = out.ID
-		if err := getIpnsAdrs(); err != nil {
-			logIpfs("Failed to get IPNS address:%s", err.Error())
-			TermIpfs(STTS_IPFS_FAILED)
-			return
+		for true {
+			time.Sleep(1 * time.Second)
+			s_Ipfs = STTS_IPFS_RESOLVING_NAME
+			logIpfs("Getting my ipns address")
+			myid = out.ID
+			if err := getIpnsAdrs(); err != nil {
+				//	logIpfs("Failed to get IPNS address:%s", err.Error())
+				//	TermIpfs(STTS_IPFS_FAILED)
+				//	return
+				continue
+			}
+			break
 		}
 		s_Ipfs = STTS_IPFS_STARTED
-		if err := IpfsCreateBoardDir(); err != nil {
-			logIpfs("Failed to create board dir:%s", err.Error())
-			TermIpfs(STTS_IPFS_FAILED)
-			return
-		}
+		//		if err := IpfsCreateBoardDir(); err != nil {
+		//			logIpfs("Failed to create board dir:%s", err.Error())
+		//			TermIpfs(STTS_IPFS_FAILED)
+		//			return
+		//		}
 	}()
 }
 
@@ -167,7 +178,6 @@ func IpfsAdd(reader io.Reader) (string, error) {
 	return hash, nil
 }
 
-var DIR_IPFS_BOARD = "boardforalterorg"
 var dIR_IPFS = "/ipfs/"
 var hASH_EMPTY_FILE = "QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"
 var hASH_EMPTY_DIR = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
@@ -177,7 +187,7 @@ const (
 	ERR_IpfsCreateIpfsDir_02 ErrCode = "02" // dir which is used for boards of alterorg is created as a file
 )
 
-func IpfsCreateBoardDir() error {
+func IpfsCreateBoardDir(name string) error {
 	if err := chkStat(); err != nil {
 		return err
 	}
@@ -194,7 +204,7 @@ func IpfsCreateBoardDir() error {
 		}
 		nodir := true
 		for _, v := range lst {
-			if v.Name == DIR_IPFS_BOARD {
+			if v.Name == name {
 				if v.Type == 2 { // 1:dir 2:file
 					return makeError(ERR_IpfsCreateIpfsDir_02)
 				}
@@ -204,7 +214,7 @@ func IpfsCreateBoardDir() error {
 		}
 		// if the directory is not created yet
 		if nodir {
-			obj.Links = append(obj.Links, ipfs.ObjectLink{Name: DIR_IPFS_BOARD, Hash: hASH_EMPTY_DIR /*, Size: 3*/})
+			obj.Links = append(obj.Links, ipfs.ObjectLink{Name: name, Hash: hASH_EMPTY_DIR /*, Size: 3*/})
 			size := uint64(0)
 			buf, err := proto.Marshal(&pb.Data{Type: pb.Data_Directory.Enum(), Data: []byte(""), Filesize: &size})
 			if err != nil {
@@ -239,10 +249,11 @@ func putIpnsAdrs(adrs string) error {
 	if err := chkStat(); err != nil {
 		return err
 	}
+	nsAdrs = adrs
+	logIpfs("Start publishing Ipns Address :%s", adrs)
 	if err := shell.Publish("", adrs); err != nil {
 		return err
 	}
-	nsAdrs = adrs
 	logIpfs("New Ipns Address is :%s", adrs)
 	return nil
 }
@@ -252,7 +263,8 @@ const (
 	ERR_IpfsWriteToBoard_02 ErrCode = "02" // failed to get dir for boards
 )
 
-func IpfsWriteToBoard(data string, n string) error {
+func IpfsWriteToBoard(dir string, data string, n string) error {
+
 	if err := chkStat(); err != nil {
 		return err
 	}
@@ -268,7 +280,7 @@ func IpfsWriteToBoard(data string, n string) error {
 	}
 	logIpfs("BoardHash : %s", hash)
 	// boarddir
-	obj, err := shell.ObjectGet(nsAdrs + "/" + DIR_IPFS_BOARD)
+	obj, err := shell.ObjectGet(nsAdrs + "/" + dir)
 	if err != nil {
 		if err.Error()[0:6] == "no link" {
 			return makeError(ERR_IpfsWriteToBoard_01)
@@ -289,7 +301,7 @@ func IpfsWriteToBoard(data string, n string) error {
 	}
 	found := false
 	for i, v := range nsobj.Links {
-		if v.Name == DIR_IPFS_BOARD {
+		if v.Name == dir {
 			v.Hash = hash
 			nsobj.Links[i] = v
 			found = true
@@ -306,12 +318,12 @@ func IpfsWriteToBoard(data string, n string) error {
 	return nil
 }
 
-func IpfsListBoard() ([][]string, error) {
+func IpfsListBoard(dir string) ([][]string, error) {
 	ret := [][]string{}
 	if err := chkStat(); err != nil {
 		return nil, err
 	}
-	list, err := shell.List(nsAdrs + "/" + DIR_IPFS_BOARD)
+	list, err := shell.List(nsAdrs + "/" + dir)
 	if err != nil {
 		return nil, err
 	}

@@ -164,18 +164,26 @@ func (selct *Alterorg) AppendAssembly(adrs string, rslt *string) error {
 }
 
 func (self *Alterorg) WriteToBoard(prm []string, rslt *string) error {
-	fmt.Printf("[Alterorg]%s, %s", prm[0], prm[1])
+	fmt.Printf("[Alterorg]%s, %s, %s\n", prm[0], prm[1], prm[2])
 
-	if len(prm) != 2 {
+	if len(prm) != 3 {
 		return errors.New("Invalid parameters")
 	}
-	return cli.IpfsWriteToBoard(prm[0], prm[1])
+	return cli.IpfsWriteToBoard(prm[0], prm[1], prm[2])
 }
 
-func (self *Alterorg) ListBoard(prm []string, rslt *[][]string) error {
+func (self *Alterorg) ListBoard(prm string, rslt *[][]string) error {
 	var err error
-	*rslt, err = cli.IpfsListBoard()
+	*rslt, err = cli.IpfsListBoard(prm)
 	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (self *Alterorg) PrepareBoard(prm string, rslt *string) error {
+	fmt.Printf("[Alterorg.Prepare]%s\n", prm)
+	if err := cli.IpfsCreateBoardDir(prm); err != nil {
 		return err
 	}
 	return nil

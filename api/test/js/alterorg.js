@@ -93,15 +93,15 @@ Vw = {
 		var fm = ''
 		 + '<h1>Assembly Detail</h1>'
 		 + '<div class="form-group">'
-		 + '<label>name</label>'
+		 + '<label>name:</label>'
 		 + '<span id="oname"></span>&nbsp;(&nbsp;'
 		 + address
 		 + '&nbsp;)&nbsp;<br>'
-		 + '<label>proposal</label>'
-		 + '<a href="#" id="proposal"></a>'
-		 + '<label>last arbiter</label>'
+		 + '<label>proposal:</label>'
+		 + '<a href="#" id="proposal"></a><br>'
+		 + '<label>last arbiter:</label>'
 		 + '<a href="#" id="arbiter"></a><br>'
-		 + '<label>version</label>'
+		 + '<label>version:</label>'
 		 + '<a href="#" id="version"></a>'
 		 + '</div>'
 		 + '<br>'
@@ -111,6 +111,7 @@ Vw = {
 		 + '</ul>';
 		$('#main').html(fm);
 		$('#btn_board').click(function() {
+			Vw.board(address);
 		});
 		$('#btn_close').click(function() {
 		});
@@ -125,7 +126,7 @@ Vw = {
 		});
 	
 	},
-	board : function() {
+	board : function(address) {
 		var fm = ''
 		 + '<h1>Board Test</h1>'
 		 + '<div class="form-group">'
@@ -145,8 +146,8 @@ Vw = {
 		$('#btn_wri').click(function() {
 			Board.write($('#content').val());
 		});
-		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Board'}]);
-		Board.init();
+		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Assembly detail'}, {name:'Board'}]);
+		Board.init(address);
 	}
 };
 
@@ -224,16 +225,20 @@ User.prototype.draw = function() {
 
 
 Board = {
+	address : '',
 	last : 1,
-	init : function() {
-		window.setTimeout(Board.draw,10000);
+	init : function(address) {
+		this.address = address;
+		rpccall('Alterorg.PrepareBoard', [Board.address], function(res) {
+		});
+		window.setTimeout(Board.draw,1000);
 	},
 	draw : function() {
-		rpccall('Alterorg.ListBoard', [], function(res) {
+		rpccall('Alterorg.ListBoard', [Board.address], function(res) {
 			var ret = '';
 			var idx = 0;
 			for (var i=0; i<res.result.length; i++) {
-				ret += '<div>' + res.result[i][1] + '</div>';
+				ret += '<div>' + res.result[i][1].replace(/[\r]*\n/g, '<br>') + '</div>';
 				idx = parseInt(res.result[i][0]);
 				Board.last = (Board.last>idx) ? Board.last : idx;
 			}
@@ -242,7 +247,7 @@ Board = {
 		)
 	},
 	write : function (txt) {
-		rpccall('Alterorg.WriteToBoard', [[txt, (Board.last+1).toString()]], function(res) {
+		rpccall('Alterorg.WriteToBoard', [[Board.address, txt, (Board.last+1).toString()]], function(res) {
 			Board.draw();
 		},
 		function(res, stat, err) {
