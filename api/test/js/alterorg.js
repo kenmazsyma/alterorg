@@ -102,7 +102,9 @@ Vw = {
 		 + '<label>last arbiter:</label>'
 		 + '<a href="#" id="arbiter"></a><br>'
 		 + '<label>version:</label>'
-		 + '<a href="#" id="version"></a>'
+		 + '<a href="#" id="version"></a><br>'
+		 + '<label>participants:</label><br>'
+		 + '<div id="participants"></div>'
 		 + '</div>'
 		 + '<br>'
 		 + '<ul class="list-inline">'
@@ -124,7 +126,56 @@ Vw = {
 		function(res, stat, err) {
 			alert(err.message)
 		});
+		rpccall('Assembly.GetParticipants', [address], function(res) {
+			if (res.result&&res.result.persons) {
+				var html = '';
+				for ( var i=0; i<res.result.persons.length; i++ ) {
+					html += '<a href="#">' + res.result.persons[i] + '</a><br>'
+				}
+				$('#participants').html(html);
+			}
+		},
+		function(res, stat, err) {
+			alert(err.message)
+		});
 	
+	},
+	userinfo : function(adrs) {
+		var fm = ''
+		 + '<h1>UserInfo</h1>'
+		 + '<div class="form-group">'
+		 + '<label>name:</label><br>'
+		 + '<input type="text" id="name" class="form-control" side="30">'
+		 + '<label>address for User:</label><br>'
+		 + '<div id="adrsusr">'
+		 + '</div><br>'
+		 + '<label>address for Ethereum:</label><br>'
+		 + '<div id="adrseth">'
+		 + '</div><br>'
+		 + '<label>address for IPFS:</label><br>'
+		 + '<div id="adrsipfs">'
+		 + '</div><br>'
+		 + '</div>'
+		 + '<div class="form-group">'
+		 + '<ul class="list-inline">'
+		 + '<li><button class="btn btn-primary" id="btn_reg">Regist</button></li>'
+		 + '</ul>'
+		 + '</div>'
+		 + '</ul>';
+
+		$('#main').html(fm);
+		$('#btn_reg').click(function() {
+			user.reg($('#name').val());
+		});
+
+		var info = function(adrs) {
+
+		};
+		if (adrs===undefined) {
+			user.getMyData();
+		} else {
+			user.getInfo(adrs);
+		}
 	},
 	board : function(address) {
 		var fm = ''
@@ -201,6 +252,67 @@ User.prototype.getAssemblyList = function() {
 	);
 }
 
+User.prototype.getInfo = function() {
+	rpccall('User.GetInfo', [this.contAdrs], function(res) {
+		$('#name').html(res.result.name);
+		$('#adrsusr').html(adrs);
+		$('#adrseth').html(res.result.adrs4eth);
+		$('#adrsipfs').html(res.result.adrs4ipfs);
+	},
+	function(res, stat, err) {
+		alert(err.message);
+	});
+}
+
+User.prototype.reg = function(name) {
+	var _this = this;
+	rpccall('User.Reg', [{node:'dummy', name:name}], function(res) {
+		var intervalId;
+		intervalId = window.setInterval(function() {
+			rpccall('User.CheckReg', [res.result], function(res2) {
+				if (res2.result!="") {
+					_this.contAdrs = res2.result;
+					window.clearInterval(intervalId);
+					_this.getInfo();
+				}
+			},
+			function(res, stat, err) {
+				alert(err.message)
+				window.clearInterval(intervalId);
+			})
+		}, 1000);
+		
+	},
+	function(res, stat, err) {
+		alert(err.message)
+	});
+}
+
+
+User.prototype.getMyData = function() {
+	this.contAdrs = '';
+	var _this = this;
+	rpccall('Alterorg.GetEthAddress', [], function(res) {
+		if (!res.result||res.result==='') {
+			alter("can't edit user info because of not started ethererum");
+			return;
+		} else {
+			rpccall('User.GetMappedUser', [res.result], function(res2) {
+				if (res2.result&&res2.result!=='') {
+					_this.contAdrs=res2.result;
+					_this.getInfo();
+				}
+			},
+			function(res, stat, err) {
+				alert(err.message)
+			});
+		}
+	},
+	function(res, stat, err) {
+		alert(err.message)
+	});
+}
+
 User.prototype.draw = function() {
 	$('#orglist').html('');
 	var code = '';
@@ -213,8 +325,8 @@ User.prototype.draw = function() {
 			  +'</a></li>';
 	}
 	code += '<li role="presentation">'
-		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.board()">'
-		  + 'Board test'
+		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.userinfo()">'
+		  + 'Edit Userinfo'
 		  +'</a></li>';
 	code += '<li role="presentation">'
 		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newAssembly()">'

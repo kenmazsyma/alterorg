@@ -1,7 +1,7 @@
 contract User {
 
 	address		account=msg.sender;
-	bytes[]		ipfsNodes;
+	bytes[]		ipfsNodes; // it is not needed multi node ? 
 	string		name;
 	// TODO:implement oparation history
 
@@ -38,5 +38,13 @@ contract User {
 			if (a[i] != b[i])
 				return false;
 		return true;
+	}
+
+	function getName() returns (address) {
+		return account;
+	}
+
+	function getInfo() returns (address, bytes, string) {
+		return (account, ipfsNodes[0], name);
 	}
 }

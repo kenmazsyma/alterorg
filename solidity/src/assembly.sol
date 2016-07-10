@@ -84,6 +84,23 @@ contract Assembly {
 		onAddedPerson(adrs);
 	}
 
+	function getParticipants() returns(address[]){
+		address[] memory ret = new address[](participant.length);
+		for (uint i=0; i<participant.length; i++) {
+			ret[i]=participant[i].person;
+		}
+		return ret;
+	}
+	
+	function getNofToken(address person) returns(int){
+		for (uint i=0; i<participant.length; i++) {
+			if (person==participant[i].person) {
+				return participant[i].nofToken;
+			}
+		}
+		return -1;
+	}
+
 	function getName() returns (string) {
 		return name[name.length-1];
 	}

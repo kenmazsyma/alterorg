@@ -37,6 +37,15 @@ type ArgGetBasicInfo struct {
 	Version  string `json:"version"`
 }
 
+type ArgGetParticipants struct {
+	Persons []string `json:"persons"`
+}
+
+type ArgGetNofTokenArg struct {
+	Address string `json:"address"`
+	Person  string `json:"person"`
+}
+
 func NewAssembly() *Assembly {
 	return &Assembly{}
 }
@@ -110,5 +119,25 @@ func (self *Assembly) GetBasicInfo(address string, rslt *ArgGetBasicInfo) error 
 		return err
 	}
 	*rslt = ArgGetBasicInfo{Name: info[0], Proposal: info[1], Arbiter: info[2], Version: info[3]}
+	return nil
+}
+
+func (self *Assembly) GetNofToken(args ArgGetNofTokenArg, rslt *int) error {
+	var err error
+	*rslt, err = alg.Assembly_GetNofToken(args.Address, args.Person)
+	if err != nil {
+		fmt.Print("%s:\n", err.Error())
+		return err
+	}
+	return nil
+}
+
+func (self *Assembly) GetParticipants(address string, rslt *ArgGetParticipants) error {
+	ret, err := alg.Assembly_GetParticipants(address)
+	if err != nil {
+		fmt.Print("%s:\n", err.Error())
+		return err
+	}
+	*rslt = ArgGetParticipants{Persons: ret}
 	return nil
 }

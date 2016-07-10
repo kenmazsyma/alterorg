@@ -58,6 +58,7 @@ func main() {
 	sv := rpc.NewServer()
 	sv.Register(api.NewAssembly())
 	sv.Register(api.NewAlterorg())
+	sv.Register(api.NewUser())
 	l, err := net.Listen("tcp", ":1234")
 	if err != nil {
 		fmt.Printf("Failed to run server:%s\n", err.Error())

@@ -12,10 +12,10 @@ contract UserMap {
 		if (usermap[msg.sender]==address(0x0)) {
 			list.push(msg.sender);
 			usermap[msg.sender] = user;
-			onReg(msg.sender, user, true);
+			onReg(msg.sender, address(user), true);
 		} else {
 			usermap[msg.sender] = user;
-			onReg(msg.sender, user, false);
+			onReg(msg.sender, address(user), false);
 		}
 	}
 
@@ -23,9 +23,12 @@ contract UserMap {
 		return list;
 	}
 
-
 	function getUser(address adrs) returns(address){
 		return usermap[adrs];
+	}
+
+	function getName(address adrs) returns (address) {
+		return User(adrs).getName();
 	}
 
 }

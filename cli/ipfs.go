@@ -33,6 +33,11 @@ var shell *ipfs.Shell
 var myid string
 var nsAdrs string
 var ipfsCmd *exec.Cmd
+var ipfsid string
+
+func GetIpfsId() string {
+	return ipfsid
+}
 
 func logIpfs(txt string, args ...interface{}) {
 	cmn.Log(LBL_IPFS, txt, args...)
@@ -90,6 +95,7 @@ func StartIpfs() {
 				//	return
 				continue
 			}
+			ipfsid = out.ID
 			break
 		}
 		for true {
@@ -319,6 +325,7 @@ func IpfsWriteToBoard(dir string, data string, n string) error {
 }
 
 func IpfsListBoard(dir string) ([][]string, error) {
+	// need to append lists of other nodes
 	ret := [][]string{}
 	if err := chkStat(); err != nil {
 		return nil, err

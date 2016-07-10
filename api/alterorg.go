@@ -188,3 +188,7 @@ func (self *Alterorg) PrepareBoard(prm string, rslt *string) error {
 	}
 	return nil
 }
+func (self *Alterorg) GetEthAddress(prm string, rslt *string) error {
+	*rslt = cli.Coinbase
+	return nil
+}

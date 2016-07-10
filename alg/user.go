@@ -9,6 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
 	ethcmn "github.com/ethereum/go-ethereum/common"
 	"runtime/debug"
 	"strings"
@@ -174,4 +175,78 @@ func UserMap_GetUsrs(address string) ([]string, error) {
 		ret = append(ret, v.Hex())
 	}
 	return ret, nil
+}
+
+func User_GetInfo(address string) ([]string, error) {
+	funcname := "getName"
+	if checkAddress(address) == false {
+		return nil, errors.New("param for address is not correct format")
+	}
+	var (
+		ret = new(common.Address)
+	)
+	if err := cli.Call(address, &ret, funcname, sol.Abi_User); err != nil {
+		return nil, err
+	}
+	return []string{"", "", ret.Hex()}, nil
+}
+
+func User_GetMappedUser(adrs4cont string, adrs4usr string) (string, error) {
+	funcname := "getUser"
+	if checkAddress(adrs4cont) == false {
+		return "", errors.New("param for address of contract is not correct format")
+	}
+	if checkAddress(adrs4usr) == false {
+		return "", errors.New("param for address of user is not correct format")
+	}
+	ret := common.Address{}
+	prm := common.StringToAddress(adrs4cont)
+	if err := cli.Call(adrs4cont, &ret, funcname, sol.Abi_UserMap, prm); err != nil {
+		return "", err
+	}
+	rethex := ret.Hex()
+	if rethex == "0x0000000000000000000000000000000000000000" {
+		return "", nil
+	}
+	return rethex, nil
+}
+
+func User_Reg(adrs string, node string, name string) (string, error) {
+	funcname := "reg"
+	if checkAddress(adrs) == false {
+		return "", errors.New("param for address of contract is not correct format")
+	}
+	//param := []string{node, name}
+	tx, err := cli.Send(adrs, funcname, sol.Abi_UserMap, []byte(node), name)
+	if err != nil {
+		return "", err
+	}
+	return tx, nil
+}
+
+func User_CheckReg(tx string) (string, error) {
+	funcname := "onReg"
+	res, err := cli.CheckContractTransaction(tx)
+	if err != nil {
+		return "", err
+	}
+	if len(res.LOG) == 0 {
+		return "", err
+	}
+	bdata, err := hex.DecodeString(res.LOG[0].Data[2:])
+	if err != nil {
+		return "", err
+	}
+	var (
+		adrs  = new(common.Address)
+		con   = new(common.Address)
+		isnew = new(bool)
+	)
+	ret := []interface{}{adrs, con, isnew}
+	err = sol.Abi_UserMap.Unpack(&ret, funcname, bdata)
+	if err != nil {
+		return "", err
+	}
+	fmt.Printf("%s, %s, %s", adrs.Hex(), con.Hex(), *isnew)
+	return con.Hex(), nil
 }

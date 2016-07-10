@@ -194,3 +194,34 @@ func Assembly_CheckRevision(tx string) (string, uint, error) {
 	}
 	return ret.Adrs, ret.Ver, nil
 }
+
+func Assembly_GetParticipants(adrs string) ([]string, error) {
+	funcname := "getParticipants"
+	ret := []common.Address{}
+	sret := []string{}
+	if !checkAddress(adrs) {
+		return nil, errors.New("param for address is not correct format")
+	}
+	if err := cli.Call(adrs, &ret, funcname, sol.Abi_Assembly); err != nil {
+		return nil, err
+	}
+	logAssembly("%s : %d", funcname, len(ret))
+	for _, parti := range ret {
+		sret = append(sret, parti.Hex())
+	}
+	return sret, nil
+}
+
+func Assembly_GetNofToken(adrs string, person string) (int, error) {
+	funcname := "getNofToken"
+	if !checkAddress(adrs) {
+		return -1, errors.New("param for address is not correct format")
+	}
+	ret := new(int)
+	if err := cli.Call(adrs, ret, funcname, sol.Abi_Assembly); err != nil {
+		return -1, err
+	}
+	logAssembly("%s : %d", funcname, ret)
+	return *ret, nil
+
+}
