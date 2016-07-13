@@ -178,21 +178,25 @@ func UserMap_GetUsrs(address string) ([]string, error) {
 }
 
 func User_GetInfo(address string) ([]string, error) {
-	funcname := "getName"
+	funcname := "getInfo"
 	if checkAddress(address) == false {
 		return nil, errors.New("param for address is not correct format")
 	}
 	var (
-		ret = new(common.Address)
+		ret1 = new(common.Address)
+		ret2 = []byte{}
+		ret3 = new(string)
 	)
+	ret := []interface{}{ret1, &ret2, ret3}
 	if err := cli.Call(address, &ret, funcname, sol.Abi_User); err != nil {
 		return nil, err
 	}
-	return []string{"", "", ret.Hex()}, nil
+	return []string{ret1.Hex(), string(ret2), *ret3}, nil
 }
 
 func User_GetMappedUser(adrs4cont string, adrs4usr string) (string, error) {
 	funcname := "getUser"
+
 	if checkAddress(adrs4cont) == false {
 		return "", errors.New("param for address of contract is not correct format")
 	}
@@ -200,7 +204,7 @@ func User_GetMappedUser(adrs4cont string, adrs4usr string) (string, error) {
 		return "", errors.New("param for address of user is not correct format")
 	}
 	ret := common.Address{}
-	prm := common.StringToAddress(adrs4cont)
+	prm := common.HexToAddress(adrs4usr)
 	if err := cli.Call(adrs4cont, &ret, funcname, sol.Abi_UserMap, prm); err != nil {
 		return "", err
 	}

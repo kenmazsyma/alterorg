@@ -23,8 +23,8 @@ contract UserMap {
 		return list;
 	}
 
-	function getUser(address adrs) returns(address){
-		return usermap[adrs];
+	function getUser(address adrs) constant returns(address){
+		return address(usermap[adrs]);
 	}
 
 	function getName(address adrs) returns (address) {

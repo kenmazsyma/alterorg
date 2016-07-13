@@ -52,94 +52,6 @@ Vw = {
 		$('#main').html('');
 	},
 
-	newAssembly : function() {
-		var fm = ''
-		 + '<h1>Create new assembly</h1>'
-		 + '<div class="form-group">'
-		 + '<label>name</label>'
-		 + '<input type="text" id="oname" class="form-control" side="30">'
-		 + '</div>'
-		 + '<input id="sel_fl" type="file" style="display:none">'
-		 + '<label>proposal</label>'
-		 + '<div class="input-group">'
-		 + '<input type="text" id="path" class="form-control" placeholder="select file...">'
-		 + '<span class="input-group-btn">'
-		 + '<button type="button" class="btn btn-default" id="btn_fl">Browse</button>'
-		 + '</span>'
-		 + '</div>'
-		 + '<br>'
-		 + '<ul class="list-inline">'
-		 + '<li><button class="btn btn-primary" id="btn_cre">Create</button></li>'
-		 + '<li><button class="btn btn-default" id="btn_can">Cancel</button></li>'
-		 + '</ul>';
-		$('#main').html(fm);
-		$('#sel_fl').change(function() {
-			$('#path').val(this.files[0].name);
-		});
-		$('#btn_fl').click(function(){
-			$('#sel_fl').click();
-		});
-		$('#btn_cre').click(function() {
-			var asm = new Assembly()
-			asm.new($('#oname').val())
-		});
-		$('#btn_can').click(function() {
-			Vw.home();
-		});
-		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Create new assembly'}]);
-	},
-	detailAssembly : function(address) {
-		var _this = this;
-		var fm = ''
-		 + '<h1>Assembly Detail</h1>'
-		 + '<div class="form-group">'
-		 + '<label>name:</label>'
-		 + '<span id="oname"></span>&nbsp;(&nbsp;'
-		 + address
-		 + '&nbsp;)&nbsp;<br>'
-		 + '<label>proposal:</label>'
-		 + '<a href="#" id="proposal"></a><br>'
-		 + '<label>last arbiter:</label>'
-		 + '<a href="#" id="arbiter"></a><br>'
-		 + '<label>version:</label>'
-		 + '<a href="#" id="version"></a><br>'
-		 + '<label>participants:</label><br>'
-		 + '<div id="participants"></div>'
-		 + '</div>'
-		 + '<br>'
-		 + '<ul class="list-inline">'
-		 + '<li><button class="btn btn-primary" id="btn_board">Board</button></li>'
-		 + '<li><button class="btn btn-primary" id="btn_close">Close</button></li>'
-		 + '</ul>';
-		$('#main').html(fm);
-		$('#btn_board').click(function() {
-			Vw.board(address);
-		});
-		$('#btn_close').click(function() {
-		});
-		this.breadCrumb([{name:'Home', link:'Vw.home()'}, {name:'Assembly detail'}]);
-		rpccall('Assembly.GetBasicInfo', [address], function(res) {
-			$('#oname').html(res.result.name);
-			$('#arbiter').html(res.result.arbiter);
-			$('#version').html(res.result.version);
-		},
-		function(res, stat, err) {
-			alert(err.message)
-		});
-		rpccall('Assembly.GetParticipants', [address], function(res) {
-			if (res.result&&res.result.persons) {
-				var html = '';
-				for ( var i=0; i<res.result.persons.length; i++ ) {
-					html += '<a href="#">' + res.result.persons[i] + '</a><br>'
-				}
-				$('#participants').html(html);
-			}
-		},
-		function(res, stat, err) {
-			alert(err.message)
-		});
-	
-	},
 	userinfo : function(adrs) {
 		var fm = ''
 		 + '<h1>UserInfo</h1>'
@@ -167,10 +79,6 @@ Vw = {
 		$('#btn_reg').click(function() {
 			user.reg($('#name').val());
 		});
-
-		var info = function(adrs) {
-
-		};
 		if (adrs===undefined) {
 			user.getMyData();
 		} else {
@@ -203,33 +111,6 @@ Vw = {
 };
 
 
-function Assembly(address) {
-	this.address = address;
-}
-
-Assembly.prototype.new = function(name) {
-	var _this = this;
-	rpccall('Assembly.Create', [name], function(res) {
-		var intervalId;
-		intervalId = window.setInterval(function() {
-			rpccall('Assembly.CheckMine', [res.result], function(res2) {
-				if (res2.result!="") {
-					_this.address = res2.result;
-					rpccall('Alterorg.AppendAssembly', [res2.result], function(res3) {
-						user.getAssemblyList();
-						window.clearInterval(intervalId);
-					});
-				}
-			},
-			function(res, stat, err) {
-				alert(err.message)
-				window.clearInterval(intervalId);
-			})
-		}, 1000);
-	}
-	)
-}
-
 function User() {
 	this.orgLst = {};
 }
@@ -253,9 +134,10 @@ User.prototype.getAssemblyList = function() {
 }
 
 User.prototype.getInfo = function() {
+	var _this = this;
 	rpccall('User.GetInfo', [this.contAdrs], function(res) {
-		$('#name').html(res.result.name);
-		$('#adrsusr').html(adrs);
+		$('#name').val(res.result.name);
+		$('#adrsusr').html(_this.contAdrs);
 		$('#adrseth').html(res.result.adrs4eth);
 		$('#adrsipfs').html(res.result.adrs4ipfs);
 	},
@@ -318,7 +200,7 @@ User.prototype.draw = function() {
 	var code = '';
 	for ( var i in this.orgLst ) {
 		code += '<li role="presentation">'
-			  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.detailAssembly('
+			  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.Assemlby.detail('
 			  + "'" + i + "'" 
 			  + ')">'
 			  + i
@@ -329,7 +211,7 @@ User.prototype.draw = function() {
 		  + 'Edit Userinfo'
 		  +'</a></li>';
 	code += '<li role="presentation">'
-		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.newAssembly()">'
+		  + '<a role="menuitem" tabindex="-1" href="#" onclick="Vw.Assembly.new()">'
 		  + 'Create new Assembly'
 		  +'</a></li>';
 	$('#orglist').append(code);

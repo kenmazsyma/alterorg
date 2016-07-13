@@ -8,13 +8,13 @@ var Abi_UserMap abi.ABI
 func Init_usermap() error{
     var v *bytes.Buffer
     var er error
-    v=bytes.NewBufferString(`[{"constant":false,"inputs":[],"name":"getName","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"n","type":"string"}],"name":"changeName","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"getInfo","outputs":[{"name":"","type":"address"},{"name":"","type":"bytes"},{"name":"","type":"string"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes"}],"name":"appendIpfsNode","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes"}],"name":"isExistNode","outputs":[{"name":"","type":"bool"}],"type":"function"},{"inputs":[{"name":"node","type":"bytes"},{"name":"n","type":"string"}],"type":"constructor"}]`)
-    Abi_User, er=abi.JSON(v)
+    v=bytes.NewBufferString(`[{"constant":false,"inputs":[{"name":"adrs","type":"address"}],"name":"getName","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":true,"inputs":[{"name":"adrs","type":"address"}],"name":"getUser","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[],"name":"getAddresses","outputs":[{"name":"","type":"address[]"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes"},{"name":"n","type":"string"}],"name":"reg","outputs":[],"type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"adrs","type":"address"},{"indexed":false,"name":"cont","type":"address"},{"indexed":false,"name":"isNew","type":"bool"}],"name":"onReg","type":"event"}]`)
+    Abi_UserMap, er=abi.JSON(v)
     if er != nil {
         return er
     }
-    v=bytes.NewBufferString(`[{"constant":false,"inputs":[{"name":"adrs","type":"address"}],"name":"getName","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"adrs","type":"address"}],"name":"getUser","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[],"name":"getAddresses","outputs":[{"name":"","type":"address[]"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes"},{"name":"n","type":"string"}],"name":"reg","outputs":[],"type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"adrs","type":"address"},{"indexed":false,"name":"cont","type":"address"},{"indexed":false,"name":"isNew","type":"bool"}],"name":"onReg","type":"event"}]`)
-    Abi_UserMap, er=abi.JSON(v)
+    v=bytes.NewBufferString(`[{"constant":false,"inputs":[],"name":"getName","outputs":[{"name":"","type":"address"}],"type":"function"},{"constant":false,"inputs":[{"name":"n","type":"string"}],"name":"changeName","outputs":[],"type":"function"},{"constant":false,"inputs":[],"name":"getInfo","outputs":[{"name":"","type":"address"},{"name":"","type":"bytes"},{"name":"","type":"string"}],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes"}],"name":"appendIpfsNode","outputs":[],"type":"function"},{"constant":false,"inputs":[{"name":"node","type":"bytes"}],"name":"isExistNode","outputs":[{"name":"","type":"bool"}],"type":"function"},{"inputs":[{"name":"node","type":"bytes"},{"name":"n","type":"string"}],"type":"constructor"}]`)
+    Abi_User, er=abi.JSON(v)
     if er != nil {
         return er
     }
