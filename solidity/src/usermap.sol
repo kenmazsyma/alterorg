@@ -8,7 +8,7 @@ contract UserMap {
 	event onReg(address adrs, address cont, bool isNew);
 
 	function reg(bytes node, string n) {
-		User user = new User(node, n);
+		User user = new User(msg.sender, node, n);
 		if (usermap[msg.sender]==address(0x0)) {
 			list.push(msg.sender);
 			usermap[msg.sender] = user;

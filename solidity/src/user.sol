@@ -1,12 +1,13 @@
 contract User {
 
-	address		account=msg.sender;
+	address		account;
 	bytes[]		ipfsNodes; // it is not needed multi node ? 
 	string		name;
 	// TODO:implement oparation history
 
-	function User(bytes node, string n) {
+	function User(address sender, bytes node, string n) {
 		name = n;
+		account = sender;
 		ipfsNodes.push(node);
 	}
 

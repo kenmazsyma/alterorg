@@ -20,49 +20,10 @@ h1 { font-size:26px; margin-top:0px }
 <script type="text/javascript">
 <!--
 
-function openModal(message){
-	$('#modalmes').html(message);
-	$('#modal').modal({backdrop: 'static', keyboard: false});
-}
-
-function closeModal() {
-	$("#modal").modal('hide');
-}
-
-function outputLog(msg) {
-	console.log(msg);
-}
-
-var intervalId = -1;
-var user;
-function waitInitialize() {
-	rpccall(
-		'Alterorg.GetEthStatus',
-		[],
-		function(res){
-			if (res.result!=='RUN') {
-				// wait for initialization
-			} else {
-				window.clearInterval(intervalId);
-				closeModal();
-				user = new User();
-				user.getAssemblyList();
-			}
-		},
-		function(req, stat,err) {
-			console.log(err.message);
-		}
-	);
-}
-
 window.onload = function(){
-	initSv("http://localhost:1234");
-	openModal('connecting to Alterorg server...');
-	intervalId = window.setInterval(waitInitialize, 500);
-	Vw.home();
+	$M.init("http://localhost:1234");
+	$M.draw();
 }
-
-
 
 -->
 </script>
@@ -106,8 +67,10 @@ window.onload = function(){
 </div>
 <script type="text/javascript" src="js/jquery-2.1.4.min.js"></script>
 <script type="text/javascript" src="js/bootstrap.min.js"></script>
+<script type="text/javascript" src="js/main.js"></script>
+<script type="text/javascript" src="js/user.js"></script>
 <script type="text/javascript" src="js/alterorg.js"></script>
 <script type="text/javascript" src="js/assembly.js"></script>
-
+<script type="text/javascript" src="js/board.js"></script>
 </body>
 </html>

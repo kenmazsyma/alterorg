@@ -136,6 +136,13 @@ func chkStat() error {
 	return nil
 }
 
+func chkNameResolved() error {
+	if s_Ipfs != STTS_IPFS_STARTED {
+		return errors.New("Ipfs is not started")
+	}
+	return nil
+}
+
 /*
 func InitIpfs(url string) error {
 	ipfsurl = url
@@ -194,7 +201,7 @@ const (
 )
 
 func IpfsCreateBoardDir(name string) error {
-	if err := chkStat(); err != nil {
+	if err := chkNameResolved(); err != nil {
 		return err
 	}
 	obj, err := shell.ObjectGet(nsAdrs)
