@@ -182,7 +182,6 @@ func (self *Alterorg) ListBoard(prm string, rslt *[][]string) error {
 }
 
 func (self *Alterorg) PrepareBoard(prm string, rslt *string) error {
-	fmt.Printf("[Alterorg.Prepare]%s\n", prm)
 	if err := cli.IpfsCreateBoardDir(prm); err != nil {
 		return err
 	}

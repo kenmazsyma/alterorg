@@ -15,14 +15,17 @@ type ArgPpslParam struct {
 
 type ArgRevPpslParam struct {
 	Address    string `json:"address"`
-	Proposal   string `json:"proposal"`
+	PropData   string `json:"propdata"`
+	PropName   string `json:"propname"`
 	Discussion string `json:"discussion"`
 }
 
 type ArgPpslRslt struct {
-	Doc     string `json:"doc"`
-	Discuss string `json:"discuss"`
-	Arbiter string `json:"arbiter"`
+	PropHash string `json:"prophash"`
+	PropName string `json:"propname"`
+	Doc      string `json:"doc"`
+	Discuss  string `json:"discuss"`
+	Arbiter  string `json:"arbiter"`
 }
 
 type ArgChkRevPpslRslt struct {
@@ -32,7 +35,8 @@ type ArgChkRevPpslRslt struct {
 
 type ArgGetBasicInfo struct {
 	Name     string `json:"name"`
-	Proposal string `json:"proposal"`
+	PropHash string `json:"prophash"`
+	PropName string `json:"propname"`
 	Arbiter  string `json:"arbiter"`
 	Version  string `json:"version"`
 }
@@ -82,17 +86,17 @@ func (self *Assembly) CheckMine(tx string, rslt *string) error {
 }
 
 func (self *Assembly) GetProposal(adrs string, rslt *ArgPpslRslt) error {
-	doc, discuss, arbiter, er := alg.Assembly_GetProposal(adrs)
+	hash, name, discuss, arbiter, er := alg.Assembly_GetProposal(adrs)
 	if er != nil {
 		fmt.Printf("%s:\n", er.Error())
 		return er
 	}
-	*rslt = ArgPpslRslt{Doc: doc, Discuss: discuss, Arbiter: arbiter}
+	*rslt = ArgPpslRslt{PropHash: hash, PropName: name, Discuss: discuss, Arbiter: arbiter}
 	return nil
 }
 
 func (self *Assembly) RevisionProposal(prm ArgRevPpslParam, rslt *string) error {
-	tx, err := alg.Assembly_RevisionProposal(prm.Address, prm.Proposal, prm.Discussion)
+	tx, err := alg.Assembly_RevisionProposal(prm.Address, prm.PropData, prm.PropName, prm.Discussion)
 	if err != nil {
 		fmt.Print("%s:\n", err.Error())
 		return err
@@ -118,7 +122,7 @@ func (self *Assembly) GetBasicInfo(address string, rslt *ArgGetBasicInfo) error 
 		fmt.Print("%s:\n", err.Error())
 		return err
 	}
-	*rslt = ArgGetBasicInfo{Name: info[0], Proposal: info[1], Arbiter: info[2], Version: info[3]}
+	*rslt = ArgGetBasicInfo{Name: info[0], PropHash: info[1], PropName: info[2], Arbiter: info[3], Version: info[4]}
 	return nil
 }
 

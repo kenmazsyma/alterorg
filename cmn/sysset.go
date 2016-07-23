@@ -9,15 +9,16 @@ import (
 )
 
 type SysEnvSet struct {
-	EthRun    int    `json:"eth_run"`
-	EthCmd    string `json:"eth_cmd"`
-	EthPrm    string `json:"eth_prm"`
-	IpfsRun   int    `json:"ipfs_run"`
-	IpfsCmd   string `json:"ipfs_cmd"`
-	IpfsPrm   string `json:"ipfs_prm"`
-	EthUrl    string `json:"eth_url"`
-	IpfsUrl   string `json:"ipfs_url"`
-	ApEnvPath string `json:"apenv_path"`
+	EthRun      int    `json:"eth_run"`
+	EthCmd      string `json:"eth_cmd"`
+	EthPrm      string `json:"eth_prm"`
+	IpfsRun     int    `json:"ipfs_run"`
+	IpfsCmd     string `json:"ipfs_cmd"`
+	IpfsPrm     string `json:"ipfs_prm"`
+	EthUrl      string `json:"eth_url"`
+	IpfsUrl     string `json:"ipfs_url"`
+	DownloadDir string `json:"download_dir"`
+	ApEnvPath   string `json:"apenv_path"`
 }
 
 var SysEnv SysEnvSet
@@ -85,6 +86,8 @@ func QuerySysEnv(prm []string) ([]string, error) {
 			ret = append(ret, SysEnv.EthUrl)
 		case "ipfs_url":
 			ret = append(ret, SysEnv.IpfsUrl)
+		case "download_dir":
+			ret = append(ret, SysEnv.DownloadDir)
 		default:
 			ret = append(ret, "")
 		}

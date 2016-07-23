@@ -1,11 +1,17 @@
 function Assembly(address) {
 	this.address = address;
 	this.intervalId = -1;
+	this.edit = false;
+	this.prophash = '';
+	this.propname = '';
+	this.qset = new QSet();
+	this.qset.start(2000);
 }
 
 Assembly.prototype.term = function() {
 	if (this.intervalId!=-1) window.clearInterval(this.intervalId);
 	this.intervalId = -1;
+	this.qset.end();
 }
 
 Assembly.prototype.new = function(name) {
@@ -34,20 +40,55 @@ Assembly.prototype.new = function(name) {
 	)
 }
 
+Assembly.prototype.update = function(name, path) {
+	var _this = this;
+	var file = $('#sel_fl').prop('files')[0];
+	var reader = new FileReader();
+	reader.onloadend = function () {
+		rpccall('Assembly.RevisionProposal', [{address:_this.address, discussion:'', propname:file.name, propdata:reader.result}], function(res) {
+			var elm = new QElm('Assembly.CheckRevisionProposal', [res.result], function(res2) {
+				if (res2.result&&res2.result.address!="") {
+					alert(res2.result.address);
+					elm.end();
+				}
+			}, function(req, stat, err) {
+			});
+			_this.qset.append(elm);
+		}, function(req, stat, err) {
+		});
+	}
+	reader.readAsDataURL(file);
+}
+
+Assembly.prototype.download = function() {
+	var childWindow = window.open('about:blank');
+	rpccall('Alterorg.QuerySetting', [['download_dir']], function(res) {
+		rpccall('Alterorg.GetFile', [{hash:this.prophash, path:res.result + '/' + this.propname}], function(res2) {
+			childWindow.location.href = 'file://' + res.result;
+			childWindow = null;
+		},
+		function(res2, stat, err) {
+			childWindow.close();
+			childWindow = null;
+			alert(err.error);
+		});
+	},
+	function(res, stat, err) {
+		alert(err.error);
+	});
+}
+
 Assembly.prototype.draw = function() {
 	var _this = this;
 	var fm = [];
-	if (!this.address) {
-		fm.push('<h1>Create new Assembly</h1>');
-	} else {
-		fm.push('<h1>Assembly detail</h1>');
-	}
-	if (this.address) {
+	if (this.address&&!this.edit) {
 		fm.push(
-		   '<div class="form-group">'
+		   '<h1>Assembly detail</h1>'
+		 + '<div class="form-group">'
 		 + '<div class="form-group"><label>name</label><br><span id="oname"></span></div>'
 		 + '<div class="form-group"><label>proposal</label><br>'
-		 + '<a href="#" id="proposal">Download</a></div>'
+		 + '<span id="propname"></span>&nbsp;(&nbsp;<a href="#" id="prophash">'
+		 + '</a>&nbsp;)&nbsp;</div>'
 		 + '<div class="form-group"><label>arbiter</label><br><span id="arbiter"></span></div>'
 		 + '<div class="form-group"><label>version</label><br><span id="version"></span></div>'
 		 + '<ul class="list-inline">'
@@ -63,14 +104,22 @@ Assembly.prototype.draw = function() {
 		$('#btn_close').click(function() {
 			$M.home();
 		});
-		$('#proposal').click(function() {
-			alert('test');
+		$('#btn_edit').click(function() {
+			_this.edit = true;
+			$M.draw();
 		});
 		$M.breadCrumb([{name:'Home', link:'$M.home()'}, {name:'Assembly detail'}]);
 		rpccall('Assembly.GetBasicInfo', [this.address], function(res) {
+			_this.prophash = res.result.prophash;
+			_this.propname = res.result.propname;
 			$('#oname').html(res.result.name);
+			$('#propname').html(res.result.propname);
+			$('#prophash').html(res.result.prophash);
 			$('#arbiter').html(res.result.arbiter);
 			$('#version').html(res.result.version);
+			$('#prophash').click(function() {
+				_this.download();
+			});
 		},
 		function(res, stat, err) {
 			alert(err.message)
@@ -87,9 +136,50 @@ Assembly.prototype.draw = function() {
 		function(res, stat, err) {
 			alert(err.message)
 		});
+	} else if (this.edit) {
+		var _this = this;
+		// TODO:sanitize
+		fm.push(
+		   '<h1>Assembly edit</h1>'
+		 + '<div class="form-group">'
+		 + '<label>name</label>'
+		 + '<input type="text" id="oname" class="form-control" side="30">'
+		 + '</div>'
+		 + '<input id="sel_fl" type="file" style="display:none">'
+		 + '<label>proposal</label>'
+		 + '<div class="input-group">'
+		 + '<input type="text" id="path" class="form-control" placeholder="select file...">'
+		 + '<span class="input-group-btn">'
+		 + '<button type="button" class="btn btn-default" id="btn_fl">Browse</button>'
+		 + '</span>'
+		 + '</div>'
+		 + '<br>'
+		 + '<ul class="list-inline">'
+		 + '<li><button class="btn btn-primary" id="btn_upd">Update</button></li>'
+		 + '<li><button class="btn btn-default" id="btn_can">Cancel</button></li>'
+		 + '</ul>'
+		);
+		var buf_oname = $('oname').val();
+		$('#main').html(fm.join(''));
+		$('#sel_fl').change(function() {
+			$('#path').val(this.files[0].name);
+		});
+		$('#btn_fl').click(function(){
+			$('#sel_fl').click();
+		});
+		$('#btn_upd').click(function() {
+			_this.update($('#oname').val(), $('#path').val());
+		});
+		$('#btn_can').click(function() {
+			_this.edit = false;
+			_this.draw()
+		});
+		$M.breadCrumb([{name:'Home', link:'$M.home()'}, {name:'Create new assembly'}]);
+
 	} else {
 		fm.push ( 
-		   '<div class="form-group">'
+		   '<h1>Create new Assembly</h1>'
+		 + '<div class="form-group">'
 		 + '<label>name</label>'
 		 + '<input type="text" id="oname" class="form-control" side="30">'
 		 + '</div>'

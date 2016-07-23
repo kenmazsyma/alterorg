@@ -98,6 +98,13 @@ function QElm(n, p, f1, f2) {
 	this.f1 = f1;
 	this.f2 = f2;
 	this.use = true;
+	this.drawf = null;
+	this.evt = null;
+}
+
+QElm.prototype.setDrawCB = function(f1, f2) {
+	this.drawf = f1;
+	this.evt = f2;
 }
 
 QElm.prototype.end = function() {
@@ -105,9 +112,12 @@ QElm.prototype.end = function() {
 }
 
 function QSet(interval) {
-	this.interval = interval;
 	this.use = true;
 	this.lst = [];
+}
+
+QSet.prototype.start = function(interval) {
+	this.interval = interval;
 	$Q.start(this);
 }
 
@@ -121,24 +131,55 @@ QSet.prototype.append = function(elm) {
 
 $Q = {
 	id : -1,
+	lst : [],
 	start : function(set) {
-		var _id = window.setInterval(function(){
+		this.lst.push(set);
+		var _id = -1;
+		var proc = function(){
+			var term = function() {
+				$Q.progress();
+			};
 			if (!set.use) {
 				window.clearInterval(_id);
-				return;
+				return term();
 			}
-			if (set.lst.length==0) return;
+			if (set.lst.length==0) return term();
 			if (!set.lst[0].use) {
 				set.lst.shift();
 			}
-			if (set.lst.length==0) return;
+			if (set.lst.length==0) return term();
 			var elm = set.lst[0];
 			if (typeof(elm.n)=='function') {
 				elm.n(elm.p, elm.f1, elm.f2);
 			} else {
 				rpccall(elm.n, elm.p, elm.f1, elm.f2);
 			}
-		}, set.interval );
+			term();
+		};
+		proc();
+		_id = window.setInterval(proc, set.interval);
+	},
+	progress : function() {
+		var html = [];
+		var evt = {};
+		for ( var i=0; i<this.lst.length; i++ ) {
+			if (!this.lst[i].use) {
+				this.lst.splice(i--,1);
+				continue;
+			}
+			for ( var j=0; j<this.lst[i].lst.length; j++ ) {
+				var elm = this.lst[i].lst[j];
+				if (elm.use&&elm.drawf) {
+					var id = 'prog_' + i + '_' + j;
+					html.push(elm.drawf(id));
+					evt[id] = elm.evt;
+				}
+			}
+		}
+		$('#prog').html(html.join(''));
+		for ( var i in evt) {
+			$('#' + i).click(evt[i]);
+		}
 	}
 };
 

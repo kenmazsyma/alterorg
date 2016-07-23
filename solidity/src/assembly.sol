@@ -10,6 +10,7 @@ contract Assembly {
 
 	struct Proposal {
 		bytes		docHash;
+		string		docName;
 		bytes		discussHash;
 		address		arbiter;
 	}
@@ -44,12 +45,7 @@ contract Assembly {
 	// constructor
 	function Assembly(string n) {
 		name.push(n);
-		version.length++;
-		Version ver = version[version.length-1];
-		ver.idxName = int(name.length-1);
-		ver.idxProposal = -1;
-		ver.idxIgnoreList = -1;
-		ver.arbiter = msg.sender;
+		revision();
 		participant.push(Participant({
 			person:msg.sender,
 			nofToken:0
@@ -57,20 +53,32 @@ contract Assembly {
 		onCreated(this);
 	}
 
-	function getBasicInfo() returns (string, string, address, uint) {
-		string nret =empty;
-		string pret =empty;
+	function revision() internal {
+		version.length++;
+		Version ver = version[version.length-1];
+		ver.idxName = int(name.length-1);
+		ver.idxProposal = int(proposal.length-1);
+		ver.idxIgnoreList = -1;
+		ver.arbiter = msg.sender;
+	}
+
+	// TODO:change the type of hash to bytes
+	function getBasicInfo() returns (string, string, string, address, uint) {
+		string nret = empty;
+		string pret = empty;
+		string pnameret = empty;
 		address vret = address(0x0);
 		if (name.length>0) {
 			nret = name[name.length-1];
 		}
 		if (proposal.length>0) {
 			pret = string(proposal[proposal.length-1].docHash);
+			pnameret = proposal[proposal.length-1].docName;
 		}
 		if (version.length>0) {
 			vret = version[version.length-1].arbiter;
 		}
-		return (nret, pret, vret, version.length);
+		return (nret, pret, pnameret, vret, version.length);
 	}
 
 	event onAddedPerson(address[] adrs);
@@ -109,20 +117,22 @@ contract Assembly {
 
 	event onRevisionedProposal(address adrs, uint version);
 
-	function revisionProposal(bytes hop, bytes hod) {
+	function revisionProposal(bytes hop, string nop, bytes hod) {
 		proposal.push(Proposal({
 							docHash:hop, 
+							docName:nop,
 							discussHash:hod,
 							arbiter:msg.sender
 					}));
-		onRevisionedProposal(this, proposal.length-1);
+		revision();
+		onRevisionedProposal(this, version.length);
 	}
 
 	// functions for refering proposal
 
-	function getProposal() returns(bytes, bytes, address) {
+	function getProposal() returns(bytes, string, bytes, address) {
 		Proposal p = proposal[proposal.length-1];
-		return (p.docHash, p.discussHash, p.arbiter);
+		return (p.docHash, p.docName, p.discussHash, p.arbiter);
 	}
 
 	function getProposalHistory(uint ver) returns(bytes, bytes, address){

@@ -1,7 +1,7 @@
 function Board(address) {
 	this.address = address;
 	var _this = this;
-	this.qset = new QSet(2000);
+	this.qset = new QSet();
 	var elm1 = new QElm('Alterorg.PrepareBoard', [this.address], function(res) {
 		if (res.error) {
 			tempModal(res.error);
@@ -25,10 +25,17 @@ function Board(address) {
 			_this.last = (_this.last>idx) ? _this.last : idx;
 		}
 		$('#list').html(ret);
+		_this.setDisable(false);
+		$Q.progress();
+	});
+	elm1.setDrawCB(function(id) {
+		return '<a href="#" id="' + id + '">Now loading...</a>';
+	}, function() {
+		alert(1);
 	});
 	this.qset.append(elm1);
 	this.qset.append(elm2);
-	$Q.start(this.qset);
+	this.qset.start(2000);
 	this.last = 1;
 }
 
@@ -36,10 +43,16 @@ Board.prototype.term = function() {
 	this.qset.end();
 }
 
+Board.prototype.setDisable = function(f) {
+	$('#content').prop('disabled', f);
+	$('#btn_wri').prop('disabled', f);
+}
+
 
 Board.prototype.write = function (txt) {
 	var _this = this;
 	rpccall('Alterorg.WriteToBoard', [[this.address, txt, (this.last+1).toString()]], function(res) {
+		$('#content').val('');
 		_this.draw();
 	},
 	function(res, stat, err) {
@@ -63,9 +76,9 @@ Board.prototype.draw = function() {
 	 + '</div>'
 	 + '<div class="form-group">'
 	 + '<label>Content</label>'
-	 + '<textarea id="content" class="form-control" rows=10 side="30"></textarea>'
+	 + '<textarea id="content" class="form-control" rows=10 side="30" disabled></textarea>'
 	 + '<ul class="list-inline">'
-	 + '<li><button class="btn btn-primary" id="btn_wri">Write</button></li>'
+	 + '<li><button class="btn btn-primary" id="btn_wri" disabled>Write</button></li>'
 	 + '</ul>'
 	 + '</div>'
 	 + '</ul>';

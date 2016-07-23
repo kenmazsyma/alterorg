@@ -6,6 +6,8 @@ import (
 	"../cli"
 	"../cmn"
 	sol "../solidity"
+	"bytes"
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"github.com/ethereum/go-ethereum/common"
@@ -123,54 +125,60 @@ func Assembly_GetBasicInfo(adrs string) ([]string, error) {
 	var (
 		name     = new(string)
 		proposal = new(string)
+		propname = new(string)
 		arbiter  = new(common.Address)
 		version  = /*new(uint)*/ big.NewInt(0)
 	)
-	ret := []interface{}{name, proposal, arbiter, &version}
+	ret := []interface{}{name, proposal, propname, arbiter, &version}
 
 	if err := cli.Call(adrs, &ret, funcname, sol.Abi_Assembly); err != nil {
 		return nil, err
 	}
-	return []string{*name, *proposal, arbiter.Hex(), version.String()}, nil
+	return []string{*name, *proposal, *propname, arbiter.Hex(), version.String()}, nil
 }
 
-func Assembly_GetProposal(adrs string) (string, string, string, error) {
+func Assembly_GetProposal(adrs string) (string, string, string, string, error) {
 	funcname := "getProposal"
 	if !checkAddress(adrs) {
-		return "", "", "", errors.New("param for address is not correct format")
+		return "", "", "", "", errors.New("param for address is not correct format")
 	}
 	var ret []string
 	err := cli.Call(adrs, ret, funcname, sol.Abi_Assembly)
 	if err != nil {
-		return "", "", "", err
+		return "", "", "", "", err
 	}
 	logAssembly("%s : %s", funcname, strings.Join(ret, ","))
-	return ret[0], ret[1], ret[2], nil
+	return ret[0], ret[1], ret[2], ret[3], nil
 }
 
-func Assembly_RevisionProposal(adrs string, doc string, discuss string) (string, error) {
+func Assembly_RevisionProposal(adrs string, hop string, nop string, discuss string) (string, error) {
 	funcname := "revisionProposal"
+	sdat := strings.Split(hop, ",")
+	if len(sdat) < 2 {
+		return "", errors.New("document data is invalid")
+	}
+	logAssembly("len:%d", len(sdat))
+	data, err := base64.StdEncoding.DecodeString(sdat[1])
+	if err != nil {
+		return "", err
+	}
+	hash, err := cli.IpfsAdd(bytes.NewReader(data))
+	if err != nil {
+		return "", err
+	}
+
 	if !checkAddress(adrs) {
-		return "", errors.New("param for address is not correct format")
+		return "", errors.New("value for address is not correct format")
 	}
-	if !checkIPFSHash(doc) {
-		return "", errors.New("param for proposal is not correct format")
+	if discuss != "" && !checkIPFSHash(discuss) {
+		return "", errors.New("value for discuss is not correct format")
 	}
-	if !checkIPFSHash(discuss) {
-		return "", errors.New("param for discuss is not correct format")
-	}
-	param := []string{doc, discuss}
-	tx, err := cli.Send(adrs, funcname, sol.Abi_Assembly, param)
+	tx, err := cli.Send(adrs, funcname, sol.Abi_Assembly, []byte(hash), nop, []byte(discuss))
 	if err != nil {
 		return "", err
 	}
 	logAssembly("%s : %s", funcname, tx)
 	return tx, nil
-}
-
-type typeCheckRevision struct {
-	Adrs string `json:"address"`
-	Ver  uint   `json:"version"`
 }
 
 func Assembly_CheckRevision(tx string) (string, uint, error) {
@@ -183,16 +191,21 @@ func Assembly_CheckRevision(tx string) (string, uint, error) {
 		return "", 0, err
 	}
 	logAssembly("%s : number:%d, data:%s", funcname, len(res.LOG), res.LOG[0].Data)
-	bdata, err := hex.DecodeString(res.LOG[0].Data)
+	bdata, err := hex.DecodeString(res.LOG[0].Data[2:])
 	if err != nil {
 		return "", 0, err
 	}
-	var ret typeCheckRevision
-	err = sol.Abi_Assembly.Unpack(ret, funcname, bdata)
+	var (
+		var1 = new(common.Address)
+		var2 = big.NewInt(0)
+	)
+	ret := []interface{}{var1, &var2}
+	err = sol.Abi_Assembly.Unpack(&ret, funcname, bdata)
 	if err != nil {
 		return "", 0, err
 	}
-	return ret.Adrs, ret.Ver, nil
+	logAssembly("VER:%d", var2)
+	return var1.Hex(), uint(var2.Int64()), nil
 }
 
 func Assembly_GetParticipants(adrs string) ([]string, error) {

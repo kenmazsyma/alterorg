@@ -186,6 +186,7 @@ func IpfsAdd(reader io.Reader) (string, error) {
 	}
 	hash, err := shell.Add(reader)
 	if err != nil {
+		fmt.Printf("ERR**:%s\n", err.Error())
 		return "", err
 	}
 	return hash, nil
