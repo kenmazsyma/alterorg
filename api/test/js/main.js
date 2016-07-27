@@ -13,7 +13,7 @@ function rpccall(method, param, cb, cberr, failcb) {
 	}
 	$.ajax({
 		type: "POST",
-		url: RpcSv,
+		url: RpcSv + '/rpc',
 		data: JSON.stringify(data),
 		dataType: 'json',
 		contentType: "application/json",

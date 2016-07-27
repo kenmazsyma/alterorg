@@ -14,12 +14,14 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/rpc"
 	"net/rpc/jsonrpc"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -65,13 +67,34 @@ func main() {
 	}
 	defer l.Close()
 	go http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
-		w.Header().Set("Content-type", "application/json")
-		w.WriteHeader(200)
-		err := sv.ServeRequest(serverCodec)
-		if err != nil {
-			fmt.Print(err)
-			return
+		fmt.Printf("URL:%s\n", r.URL.Path)
+		if r.URL.Path == "/rpc" {
+			serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
+			w.Header().Set("Content-type", "application/json")
+			w.WriteHeader(200)
+			err := sv.ServeRequest(serverCodec)
+			if err != nil {
+				fmt.Print(err)
+				return
+			}
+		} else {
+			data, err := readFile("../api/test/" + r.URL.Path)
+			if err != nil {
+				w.WriteHeader(404)
+				w.Write([]byte("failed"))
+			} else {
+				m := map[string]string{"html": "text/html",
+					"css": "text/css",
+					"js":  "application/x-javascript",
+				}
+				ext := strings.Split(r.URL.Path, ".")
+				ct := m[ext[len(ext)-1]]
+				if ct != "" {
+					w.Header().Set("Content-type", ct)
+				}
+				w.WriteHeader(200)
+				w.Write(data)
+			}
 		}
 	}))
 	scan := bufio.NewScanner(os.Stdin)
@@ -113,4 +136,19 @@ func main() {
 			return
 		}
 	}
+}
+
+func readFile(path string) ([]byte, error) {
+	fin, er := os.Open(path)
+	if er != nil {
+		fmt.Printf("failure to open the file : %s\n", path)
+		return nil, er
+	}
+	defer fin.Close()
+	buf, er := ioutil.ReadAll(fin)
+	if er != nil {
+		fmt.Print("failure to read the file : %s\n", path)
+		return nil, er
+	}
+	return buf, nil
 }
