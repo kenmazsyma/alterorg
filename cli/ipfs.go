@@ -85,8 +85,8 @@ func StartIpfs() {
 		var out *ipfs.IdOutput
 		var err error
 		for true {
-			time.Sleep(1 * time.Second)
 			s_Ipfs = STTS_IPFS_GETTING_SYSINFO
+			time.Sleep(1 * time.Second)
 			logIpfs("Getting information from IPFS....")
 			shell = ipfs.NewShell(cmn.SysEnv.IpfsUrl)
 			out, err = shell.ID()
@@ -100,8 +100,8 @@ func StartIpfs() {
 			break
 		}
 		for true {
-			time.Sleep(1 * time.Second)
 			s_Ipfs = STTS_IPFS_RESOLVING_NAME
+			time.Sleep(1 * time.Second)
 			logIpfs("Getting my ipns address")
 			myid = out.ID
 			if err := getIpnsAdrs(); err != nil {

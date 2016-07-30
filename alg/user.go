@@ -36,8 +36,7 @@ type typeReg struct {
 func UserMap_Reg(address string, node string, name string) (string, error) {
 	//param := typeReg{Node: ethcmn.StringToAddress(adrs), Name: name}
 	funcname := "reg"
-	//adrs:=Coinbase
-	adrs := "0x1111111111222222222233333333334444444444"
+	adrs := cli.Coinbase
 	tx, err := cli.Send(address, funcname, sol.Abi_UserMap /*ethcmn.StringToAddress(adrs)*/, []byte(adrs), name)
 	if err != nil {
 		return "", err
@@ -75,7 +74,8 @@ func UserMap_Prepare() {
 		logUser("Wainting Ethereum & IPFS")
 		for true {
 			time.Sleep(1 * time.Second)
-			if cli.GetIpfsStatus() != cli.STTS_IPFS_STARTED {
+			ipfsstat := cli.GetIpfsStatus()
+			if ipfsstat != cli.STTS_IPFS_STARTED && ipfsstat != cli.STTS_IPFS_RESOLVING_NAME {
 				continue
 			}
 			if cli.GetEthStatus() != cli.STTS_ETH_STARTED {
@@ -101,7 +101,7 @@ func UserMap_Prepare() {
 		if !mined {
 			s_User = STTS_USER_WAIT_REG
 			// TODO:change to correct value
-			tx, err := UserMap_Reg(cmn.ApEnv.UsrMap, "0xaAaAfFfzfz", "for test")
+			tx, err := UserMap_Reg(cmn.ApEnv.UsrMap, cli.GetIpfsId(), "for test")
 			if err != nil {
 				logUser("Failed to regist my coount to UsrList:%s", err.Error())
 				s_User = STTS_USER_FAILED
@@ -172,6 +172,7 @@ func UserMap_GetUsrs(address string) ([]string, error) {
 	}
 	var ret []string
 	for _, v := range adss {
+		logUser("elm : %s", v.Hex())
 		ret = append(ret, v.Hex())
 	}
 	return ret, nil
