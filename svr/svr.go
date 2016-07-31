@@ -67,7 +67,6 @@ func main() {
 	}
 	defer l.Close()
 	go http.Serve(l, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("URL:%s\n", r.URL.Path)
 		if r.URL.Path == "/rpc" {
 			serverCodec := jsonrpc.NewServerCodec(&HttpConn{in: r.Body, out: w})
 			w.Header().Set("Content-type", "application/json")

@@ -41,8 +41,8 @@ contract User {
 		return true;
 	}
 
-	function getName() returns (address) {
-		return account;
+	function getName() returns (string) {
+		return name;
 	}
 
 	function getInfo() returns (address, bytes, string) {

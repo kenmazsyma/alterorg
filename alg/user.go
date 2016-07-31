@@ -28,28 +28,15 @@ func NewUserMap() (string, error) {
 	return address, nil
 }
 
-type typeReg struct {
-	Node ethcmn.Address `json:"node"`
-	Name string         `json:"name"`
-}
-
 func UserMap_Reg(address string, node string, name string) (string, error) {
-	//param := typeReg{Node: ethcmn.StringToAddress(adrs), Name: name}
 	funcname := "reg"
-	adrs := cli.Coinbase
-	tx, err := cli.Send(address, funcname, sol.Abi_UserMap /*ethcmn.StringToAddress(adrs)*/, []byte(adrs), name)
+	tx, err := cli.Send(address, funcname, sol.Abi_UserMap, []byte(node), name)
 	if err != nil {
 		return "", err
 	}
 	fmt.Print(tx + "\n")
 	return tx, nil
 }
-
-//type typeCheckReg struct {
-//	Adrs  ethcmn.Address `json:"adrs"`
-//	Cont  ethcmn.Address `json:"cont"`
-//	IsNew bool           `json:"isNew"`
-//}
 
 type Status int
 
@@ -101,7 +88,7 @@ func UserMap_Prepare() {
 		if !mined {
 			s_User = STTS_USER_WAIT_REG
 			// TODO:change to correct value
-			tx, err := UserMap_Reg(cmn.ApEnv.UsrMap, cli.GetIpfsId(), "for test")
+			tx, err := UserMap_Reg(cmn.ApEnv.UsrMap, cli.GetIpfsId(), "")
 			if err != nil {
 				logUser("Failed to regist my coount to UsrList:%s", err.Error())
 				s_User = STTS_USER_FAILED

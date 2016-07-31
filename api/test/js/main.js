@@ -73,8 +73,8 @@ $M = {
 		this.cur.term();
 		this.cur = o;
 	},
-	assembly : function(address) {
-		this.changePage(new Assembly(address));
+	assembly : function(address, pat) {
+		this.changePage(new Assembly(address, pat));
 		this.draw();
 	},
 	user : function(address) {

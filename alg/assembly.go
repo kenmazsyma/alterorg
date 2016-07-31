@@ -41,6 +41,21 @@ func NewAssembly(name string) (string, error) {
 	return address, nil
 }
 
+func Assembly_Join(adrs string) error {
+	// check wherether if address is for Assembly
+	if _, err := Assembly_GetName(adrs); err != nil {
+		return errors.New("address is not for Assembly")
+	}
+	list := cmn.QueryAssemblyList()
+	for _, elm := range list {
+		if elm == adrs {
+			return errors.New("already joining")
+		}
+	}
+	cmn.UpdateAssemblyList(append(list, adrs))
+	return cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
+}
+
 func Assembly_ChkCreated(tx string) (string, error) {
 	funcname := "onCreated"
 	res, err := cli.CheckContractTransaction(tx)
@@ -108,13 +123,14 @@ func Assembly_GetName(adrs string) (string, error) {
 	if !checkAddress(adrs) {
 		return "", errors.New("param for address is not correct format")
 	}
-	var ret string
-	err := cli.Call(adrs, ret, funcname, sol.Abi_Assembly)
+	var ret = new(string)
+	err := cli.Call(adrs, &ret, funcname, sol.Abi_Assembly)
 	if err != nil {
+		logAssembly("error::%s", err.Error())
 		return "", err
 	}
-	logAssembly("%s : %s", funcname, ret)
-	return ret, nil
+	logAssembly("%s : %s", funcname, *ret)
+	return *ret, nil
 }
 
 func Assembly_GetBasicInfo(adrs string) ([]string, error) {

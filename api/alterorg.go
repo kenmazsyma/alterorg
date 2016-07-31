@@ -123,11 +123,7 @@ func (self *Alterorg) GetIpfsStatus(prm string, rslt *string) error {
 }
 
 func (self *Alterorg) QueryAssemblyLst(prm string, rslt *[]string) error {
-	var err error
-	*rslt, err = cmn.QueryAssemblyList()
-	if err != nil {
-		return err
-	}
+	*rslt = cmn.QueryAssemblyList()
 	return nil
 }
 
@@ -135,10 +131,7 @@ func (self *Alterorg) QueryAssemblyLst(prm string, rslt *[]string) error {
 func (self *Alterorg) UpdateAssemblyLst(prm []string, rslt *string) error {
 	var err error
 	fmt.Printf("UpdateAssemblyLst\n")
-	err = cmn.UpdateAssemblyList(prm)
-	if err != nil {
-		return err
-	}
+	cmn.UpdateAssemblyList(prm)
 	err = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
 	if err != nil {
 		return err
@@ -147,16 +140,9 @@ func (self *Alterorg) UpdateAssemblyLst(prm []string, rslt *string) error {
 }
 
 func (selct *Alterorg) AppendAssembly(adrs string, rslt *string) error {
-	lst, err := cmn.QueryAssemblyList()
-	if err != nil {
-		return err
-	}
-	lst = append(lst, adrs)
-	err = cmn.UpdateAssemblyList(lst)
-	if err != nil {
-		return err
-	}
-	err = cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
+	lst := append(cmn.QueryAssemblyList(), adrs)
+	cmn.UpdateAssemblyList(lst)
+	err := cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
 	if err != nil {
 		return err
 	}

@@ -105,8 +105,12 @@ AlterOrg = {
 			  + 'Edit Userinfo'
 			  +'</a></li>';
 		code += '<li role="presentation">'
-			  + '<a role="menuitem" tabindex="-1" href="#" onclick="$M.assembly()">'
+			  + '<a role="menuitem" tabindex="-1" href="#" onclick="$M.assembly(\'\', 1)">'
 			  + 'Create new Assembly'
+			  +'</a></li>';
+		code += '<li role="presentation">'
+			  + '<a role="menuitem" tabindex="-1" href="#" onclick="$M.assembly(\'\', 2)">'
+			  + 'Join to Assembly'
 			  +'</a></li>';
 		$('#orglist').append(code);
 	

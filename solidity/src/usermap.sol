@@ -27,9 +27,5 @@ contract UserMap {
 		return address(usermap[adrs]);
 	}
 
-	function getName(address adrs) returns (address) {
-		return User(adrs).getName();
-	}
-
 }
 
