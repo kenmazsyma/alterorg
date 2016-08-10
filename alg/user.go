@@ -28,7 +28,7 @@ func NewUserMap() (string, error) {
 	return address, nil
 }
 
-func UserMap_Reg(address string, node string, name string) (string, error) {
+func UserMap_RegOwn(address string, node string, name string) (string, error) {
 	funcname := "reg"
 	tx, err := cli.Send(address, funcname, sol.Abi_UserMap, []byte(node), name)
 	if err != nil {
@@ -72,7 +72,7 @@ func UserMap_Prepare() {
 			break
 		}
 		s_User = STTS_USER_GETTING
-		UsrLst, err := UserMap_GetUsrs(cmn.ApEnv.UsrMap)
+		UsrLst, err := UserMap_GetUsrs()
 		if err != nil {
 			logUser("Failed to get UserList:%s", err.Error())
 			s_User = STTS_USER_FAILED
@@ -81,6 +81,7 @@ func UserMap_Prepare() {
 		logUser("AddressList:%s", strings.Join(UsrLst, "\n"))
 		mined := false
 		for _, adrs := range UsrLst {
+			fmt.Printf("check list:%s, %s\n", adrs, cli.Coinbase)
 			if adrs == cli.Coinbase {
 				mined = true
 			}
@@ -88,7 +89,7 @@ func UserMap_Prepare() {
 		if !mined {
 			s_User = STTS_USER_WAIT_REG
 			// TODO:change to correct value
-			tx, err := UserMap_Reg(cmn.ApEnv.UsrMap, cli.GetIpfsId(), "")
+			tx, err := UserMap_RegOwn(cmn.ApEnv.UsrMap, cli.GetIpfsId(), "")
 			if err != nil {
 				logUser("Failed to regist my coount to UsrList:%s", err.Error())
 				s_User = STTS_USER_FAILED
@@ -97,7 +98,7 @@ func UserMap_Prepare() {
 			UsrLst = append(UsrLst, cli.Coinbase)
 			time.Sleep(time.Second * 3)
 			for !mined {
-				adrs, cont, isnew, err := UserMap_CheckReg(tx)
+				adrs, cont, isnew, err := UserMap_CheckRegOwn(tx)
 				if adrs != "" {
 					logUser("I was mined!:%s:%s:%s", adrs, cont, isnew)
 					mined = true
@@ -118,7 +119,7 @@ func UserMap_Prepare() {
 
 }
 
-func UserMap_CheckReg(tx string) (string, string, bool, error) {
+func UserMap_CheckRegOwn(tx string) (string, string, bool, error) {
 	funcname := "onReg"
 	res, err := cli.CheckContractTransaction(tx)
 	if err != nil {
@@ -146,14 +147,11 @@ func UserMap_CheckReg(tx string) (string, string, bool, error) {
 	return var1.Hex(), var2.Hex(), *var3, nil
 }
 
-func UserMap_GetUsrs(address string) ([]string, error) {
+func UserMap_GetUsrs() ([]string, error) {
 	funcname := "getAddresses"
-	if !checkAddress(address) {
-		return nil, errors.New("param for address is not correct format")
-	}
 	//param := []string{}
 	var adss []ethcmn.Address
-	err := cli.Call(address, &adss, funcname, sol.Abi_UserMap)
+	err := cli.Call(cmn.ApEnv.UsrMap, &adss, funcname, sol.Abi_UserMap)
 	if err != nil {
 		return nil, err
 	}
@@ -182,18 +180,15 @@ func User_GetInfo(address string) ([]string, error) {
 	return []string{ret1.Hex(), string(ret2), *ret3}, nil
 }
 
-func User_GetMappedUser(adrs4cont string, adrs4usr string) (string, error) {
+func UserMap_GetMappedUser(adrs4usr string) (string, error) {
 	funcname := "getUser"
 
-	if checkAddress(adrs4cont) == false {
-		return "", errors.New("param for address of contract is not correct format")
-	}
 	if checkAddress(adrs4usr) == false {
 		return "", errors.New("param for address of user is not correct format")
 	}
 	ret := common.Address{}
 	prm := common.HexToAddress(adrs4usr)
-	if err := cli.Call(adrs4cont, &ret, funcname, sol.Abi_UserMap, prm); err != nil {
+	if err := cli.Call(cmn.ApEnv.UsrMap, &ret, funcname, sol.Abi_UserMap, prm); err != nil {
 		return "", err
 	}
 	rethex := ret.Hex()
@@ -203,20 +198,17 @@ func User_GetMappedUser(adrs4cont string, adrs4usr string) (string, error) {
 	return rethex, nil
 }
 
-func User_Reg(adrs string, node string, name string) (string, error) {
+func UserMap_Reg(node string, name string) (string, error) {
 	funcname := "reg"
-	if checkAddress(adrs) == false {
-		return "", errors.New("param for address of contract is not correct format")
-	}
 	//param := []string{node, name}
-	tx, err := cli.Send(adrs, funcname, sol.Abi_UserMap, []byte(node), name)
+	tx, err := cli.Send(cmn.ApEnv.UsrMap, funcname, sol.Abi_UserMap, []byte(node), name)
 	if err != nil {
 		return "", err
 	}
 	return tx, nil
 }
 
-func User_CheckReg(tx string) (string, error) {
+func UserMap_CheckReg(tx string) (string, error) {
 	funcname := "onReg"
 	res, err := cli.CheckContractTransaction(tx)
 	if err != nil {

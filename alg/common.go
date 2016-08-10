@@ -112,3 +112,7 @@ func checkAddress(address string) bool {
 	}
 	return true
 }
+
+func makeError(msg ErrCode) error {
+	return errors.New(string(msg))
+}

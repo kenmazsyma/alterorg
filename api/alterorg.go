@@ -1,6 +1,7 @@
 package api
 
 import (
+	"../alg"
 	"../cli"
 	"../cmn"
 	//"encoding/json"
@@ -155,12 +156,12 @@ func (self *Alterorg) WriteToBoard(prm []string, rslt *string) error {
 	if len(prm) != 3 {
 		return errors.New("Invalid parameters")
 	}
-	return cli.IpfsWriteToBoard(prm[0], prm[1], prm[2])
+	return alg.IpfsWriteToBoard(prm[0], prm[1], prm[2])
 }
 
 func (self *Alterorg) ListBoard(prm string, rslt *[][]string) error {
 	var err error
-	*rslt, err = cli.IpfsListBoard(prm)
+	*rslt, err = alg.IpfsListBoard(prm)
 	if err != nil {
 		return err
 	}
@@ -168,7 +169,7 @@ func (self *Alterorg) ListBoard(prm string, rslt *[][]string) error {
 }
 
 func (self *Alterorg) PrepareBoard(prm string, rslt *string) error {
-	if err := cli.IpfsCreateBoardDir(prm); err != nil {
+	if err := alg.IpfsCreateBoardDir(prm); err != nil {
 		return err
 	}
 	return nil

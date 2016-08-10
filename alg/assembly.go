@@ -41,19 +41,24 @@ func NewAssembly(name string) (string, error) {
 	return address, nil
 }
 
-func Assembly_Join(adrs string) error {
+func Assembly_Join(adrs string) (string, error) {
 	// check wherether if address is for Assembly
 	if _, err := Assembly_GetName(adrs); err != nil {
-		return errors.New("address is not for Assembly")
+		return "", errors.New("address is not for Assembly")
 	}
 	list := cmn.QueryAssemblyList()
 	for _, elm := range list {
 		if elm == adrs {
-			return errors.New("already joining")
+			return "", errors.New("already joining")
 		}
 	}
+	// TODO:will move saving process to event callee function for mining
+	tx, err := Assembly_AddPerson(adrs, []string{cli.Coinbase})
+	if err != nil {
+		return "", err
+	}
 	cmn.UpdateAssemblyList(append(list, adrs))
-	return cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
+	return tx, cmn.SaveApEnv(cmn.SysEnv.ApEnvPath)
 }
 
 func Assembly_ChkCreated(tx string) (string, error) {
@@ -87,9 +92,13 @@ func Assembly_AddPerson(adrs string, list []string) (string, error) {
 			return "", errors.New("param for address is not correct format")
 		}
 	}
-	param := [][]string{list}
-	tx, err := cli.Send(adrs, funcname, sol.Abi_Assembly, param)
+	prm := []common.Address{}
+	for _, v := range list {
+		prm = append(prm, common.HexToAddress(v))
+	}
+	tx, err := cli.Send(adrs, funcname, sol.Abi_Assembly, prm)
 	if err != nil {
+		logAssembly("ERRORED:%s", err.Error())
 		return "", err
 	}
 	logAssembly("%s : %s", funcname, tx)

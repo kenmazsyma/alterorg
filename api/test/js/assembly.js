@@ -133,7 +133,7 @@ Assembly.prototype.draw = function() {
 			function(res, stat, err) {
 				alert(err.message)
 			});
-			rpccall('Assembly.GetParticipants', [this.address], function(res) {
+			rpccall('Assembly.GetParticipants', [_this.address], function(res) {
 				if (res.result&&res.result.persons) {
 					var html = '';
 					for ( var i=0; i<res.result.persons.length; i++ ) {

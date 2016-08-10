@@ -65,7 +65,9 @@ func (self *Assembly) Create(name string, rslt *string) error {
 }
 
 func (self *Assembly) Join(address string, rslt *string) error {
-	return alg.Assembly_Join(address)
+	tx, err := alg.Assembly_Join(address)
+	*rslt = tx
+	return err
 }
 
 func (self *Assembly) getName(address string, rslt *string) error {

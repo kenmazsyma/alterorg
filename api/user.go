@@ -32,7 +32,7 @@ func (self *User) GetInfo(adrs string, rslt *RsltUserGetInfo) error {
 
 func (self *User) GetMappedUser(adrs string, rslt *string) error {
 	fmt.Printf("UserMap:%s\n", cmn.ApEnv.UsrMap)
-	ret, err := alg.User_GetMappedUser(cmn.ApEnv.UsrMap, adrs)
+	ret, err := alg.UserMap_GetMappedUser(adrs)
 	if err != nil {
 		fmt.Print("%s:\n", err.Error())
 		return err
@@ -49,7 +49,7 @@ type ArgUserReg struct {
 func (self *User) Reg(prm ArgUserReg, rslt *string) error {
 	// TODO:change to get data from param
 	ipfsid := cli.GetIpfsId()
-	tx, err := alg.User_Reg(cmn.ApEnv.UsrMap, ipfsid, prm.Name)
+	tx, err := alg.UserMap_Reg(ipfsid, prm.Name)
 	if err != nil {
 		fmt.Printf("%s:\n", err.Error())
 		return err
@@ -59,7 +59,7 @@ func (self *User) Reg(prm ArgUserReg, rslt *string) error {
 }
 
 func (self *User) CheckReg(tx string, rslt *string) error {
-	adrs, err := alg.User_CheckReg(tx)
+	adrs, err := alg.UserMap_CheckReg(tx)
 	if err != nil {
 		fmt.Printf("%s\n", err.Error())
 		return err

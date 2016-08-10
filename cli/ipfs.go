@@ -7,11 +7,11 @@ import (
 	"errors"
 	"fmt"
 	ipfs "github.com/ipfs/go-ipfs-api"
-	pb "github.com/ipfs/go-ipfs/unixfs/pb"
+	//pb "github.com/ipfs/go-ipfs/unixfs/pb"
 	//proto "gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-protobuf/proto"
-	proto "github.com/gogo/protobuf/proto"
+	//proto "github.com/gogo/protobuf/proto"
 	"io"
-	"io/ioutil"
+	//"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
@@ -130,14 +130,14 @@ func TermIpfs(stts Status) {
 	s_Ipfs = stts
 }
 
-func chkStat() error {
+func ChkStat() error {
 	if s_Ipfs != STTS_IPFS_STARTED && s_Ipfs != STTS_IPFS_RESOLVING_NAME {
 		return errors.New("Ipfs is not started")
 	}
 	return nil
 }
 
-func chkNameResolved() error {
+func ChkNameResolved() error {
 	if s_Ipfs != STTS_IPFS_STARTED {
 		return errors.New("Ipfs is not started")
 	}
@@ -157,21 +157,21 @@ func InitIpfs(url string) error {
 	return nil
 }*/
 func IpfsGet(hash, path string) error {
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return err
 	}
 	return shell.Get(hash, path)
 }
 
 func IpfsBlockGet(hash string) ([]byte, error) {
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return nil, err
 	}
 	return shell.BlockGet(hash)
 }
 
 func IpfsAddFile(path string) (string, error) {
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return "", err
 	}
 	file, err := os.Open(path)
@@ -182,7 +182,7 @@ func IpfsAddFile(path string) (string, error) {
 }
 
 func IpfsAdd(reader io.Reader) (string, error) {
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return "", err
 	}
 	hash, err := shell.Add(reader)
@@ -193,6 +193,7 @@ func IpfsAdd(reader io.Reader) (string, error) {
 	return hash, nil
 }
 
+/*
 var dIR_IPFS = "/ipfs/"
 var hASH_EMPTY_FILE = "QmbFMke1KXqnYyBBWxB74N4c5SBnJMVAiMNRcGu6x1AwQH"
 var hASH_EMPTY_DIR = "QmUNLLsPACCz1vLxQVkXqqLX5R1X345qqfHbsf67hvA3Nn"
@@ -212,6 +213,7 @@ func IpfsCreateBoardDir(name string) error {
 	}
 	if len(obj.Links) == 0 && nsAdrs != dIR_IPFS+hASH_EMPTY_DIR { // link to a file
 		return makeError(ERR_IpfsCreateIpfsDir_01)
+
 	} else { // link to a directory
 		lst, err := shell.List(nsAdrs)
 		if err != nil {
@@ -229,7 +231,7 @@ func IpfsCreateBoardDir(name string) error {
 		}
 		// if the directory is not created yet
 		if nodir {
-			obj.Links = append(obj.Links, ipfs.ObjectLink{Name: name, Hash: hASH_EMPTY_DIR /*, Size: 3*/})
+ 			obj.Links = append(obj.Links, ipfs.ObjectLink{Name: name, Hash: hASH_EMPTY_DIR /*, Size: 3*/ /*})
 			size := uint64(0)
 			buf, err := proto.Marshal(&pb.Data{Type: pb.Data_Directory.Enum(), Data: []byte(""), Filesize: &size})
 			if err != nil {
@@ -249,7 +251,7 @@ func IpfsCreateBoardDir(name string) error {
 }
 
 func getIpnsAdrs() error {
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return err
 	}
 	var err error
@@ -261,7 +263,7 @@ func getIpnsAdrs() error {
 }
 
 func putIpnsAdrs(adrs string) error {
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return err
 	}
 	nsAdrs = adrs
@@ -280,7 +282,7 @@ const (
 
 func IpfsWriteToBoard(dir string, data string, n string) error {
 
-	if err := chkStat(); err != nil {
+	if err := ChkStat(); err != nil {
 		return err
 	}
 	size := uint64(len(data))
@@ -333,17 +335,26 @@ func IpfsWriteToBoard(dir string, data string, n string) error {
 	return nil
 }
 
-func IpfsListBoard(dir string) ([][]string, error) {
-	// need to append lists of other nodes
-	ret := [][]string{}
-	if err := chkStat(); err != nil {
-		return nil, err
-	}
-	list, err := shell.List(nsAdrs + "/" + dir)
+func IpfsListBoard(adrs string) ([][]string, error) {
+	list, err := alg.Assembly_GetParticipants(adrs)
+	postlist := []shell.LsLink{}
 	if err != nil {
+		return err
+	}
+	ret := [][]string{}
+	if err := ChkStat(); err != nil {
 		return nil, err
 	}
-	for _, lnk := range list {
+	for i, v := range list {
+		info, err := alg.User_GetInfo(v)
+		list, err := shell.List("/ipns/" + info[1] + "/" + dir)
+		if err != nil {
+			return nil, err
+		}
+		postlist = append(postlist, list)
+	}
+	// TODO:need to sort the list
+	for _, lnk := range postlist {
 		rc, err := shell.Cat(lnk.Hash)
 		if err != nil {
 			fmt.Printf(":%s(Hash:%s)\n", err.Error(), lnk.Hash)
@@ -353,4 +364,37 @@ func IpfsListBoard(dir string) ([][]string, error) {
 		ret = append(ret, []string{lnk.Name, string(buf)})
 	}
 	return ret, nil
+}*/
+
+func getIpnsAdrs() error {
+	if err := ChkStat(); err != nil {
+		return err
+	}
+	var err error
+	if nsAdrs, err = shell.Resolve(myid); err != nil {
+		return err
+	}
+	logIpfs("IPNS:%s", nsAdrs)
+	return nil
+}
+
+func GetIpnsAdrs() string {
+	return nsAdrs
+}
+
+func PutIpnsAdrs(adrs string) error {
+	if err := ChkStat(); err != nil {
+		return err
+	}
+	nsAdrs = adrs
+	logIpfs("Start publishing Ipns Address :%s", adrs)
+	if err := shell.Publish("", adrs); err != nil {
+		return err
+	}
+	logIpfs("New Ipns Address is :%s", adrs)
+	return nil
+}
+
+func GetShell() *ipfs.Shell {
+	return shell
 }
